@@ -152,7 +152,7 @@ def build(root,lang):
    for e in obj.select('[onclick]'):
     if 'openModal(' in e['onclick']:e['onclick']=e['onclick'].replace('Módulo ', 'Module ' if lang=='en' else 'Módulo ')
    langnav(obj,root,rel,lang)
-   obj=str(obj)
+   obj=re.sub(r"(?i)(<!doctype html>)\s*",r"\1\n",str(obj))
   elif isinstance(obj,list):obj=''.join(obj)
   p=dst/rel;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(obj)
  print(root.name,lang,len(cfg['pages']),'pages',len(CAT),'units')
@@ -160,5 +160,5 @@ def main():
  root=Path(__file__).resolve().parents[1]
  for lang in ['en','es']:build(root,lang)
  for p in pages(root):
-  s=BeautifulSoup(p.read_text(),'html.parser');langnav(s,root,p.relative_to(root),'pt');p.write_text(str(s))
+  s=BeautifulSoup(p.read_text(),'html.parser');langnav(s,root,p.relative_to(root),'pt');p.write_text(re.sub(r'(?i)(<!doctype html>)\s*',r'\1\n',str(s)))
 if __name__=='__main__':main()
