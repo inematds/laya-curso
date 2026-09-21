@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+<script>(function () {
+  try {
+    var html = document.documentElement;
+    var DEF = { theme: 'inema-dark', font: 'inter', fontScale: 100, lineWidth: 68, leading: 1.7, accent: 'emerald' };
+    function clone(o) { var r = {}; for (var x in o) r[x] = o[x]; return r; }
+    var p = clone(DEF);
+    try {
+      var raw = localStorage.getItem('inema.prefs');
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          for (var k in DEF) if (parsed[k] != null) p[k] = parsed[k];
+        }
+      } else {
+        // fallback ao tema legado do v1
+        var legacy = localStorage.getItem('theme');
+        if (legacy === 'light') p.theme = 'claro';
+        else if (legacy === 'dark') p.theme = 'inema-dark';
+      }
+    } catch (e) { p = clone(DEF); }
+
+    // mapa tema -> (.dark on/off, data-theme, color-scheme)
+    var THEMES = {
+      'inema-dark': { dark: true,  attr: null,        cs: 'dark'  },
+      'claro':      { dark: false, attr: null,        cs: 'light' },
+      'sepia':      { dark: false, attr: 'sepia',     cs: 'light' },
+      'foco':       { dark: null,  attr: 'foco',      cs: null    },  // herda eixo atual
+      'contraste':  { dark: true,  attr: 'contraste', cs: 'dark'  }
+    };
+    var t = THEMES[p.theme] || THEMES['inema-dark'];
+
+    if (t.dark === true) html.classList.add('dark');
+    else if (t.dark === false) html.classList.remove('dark');
+    // 'foco' (null) preserva o que ja houver no atributo class do <html>
+
+    if (t.attr) html.setAttribute('data-theme', t.attr);
+    else html.removeAttribute('data-theme');
+
+    html.style.colorScheme = (t.cs ? t.cs : (html.classList.contains('dark') ? 'dark' : 'light'));
+
+    html.setAttribute('data-font', p.font || 'inter');
+    html.setAttribute('data-accent', p.accent || 'emerald');
+
+    // variaveis de leitura (espelham learn.js / learn.css) ANTES do paint
+    var s = html.style;
+    var scale = (+p.fontScale || 100);
+    s.setProperty('--inema-font-scale', (scale / 100).toString());
+    s.setProperty('font-size', scale + '%');               // :root em %, nunca px
+    s.setProperty('--measure', (+p.lineWidth || 68) + 'ch');
+    s.setProperty('--lh-body', (+p.leading || 1.7).toString());
+    var fam = p.font === 'system'
+      ? 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+      : (p.font === 'leitura'
+        ? '"Atkinson Hyperlegible", "Inter", system-ui, sans-serif'
+        : '"Inter", system-ui, sans-serif');
+    s.setProperty('--font-body', fam);
+
+    var ACC = {
+      emerald: [152, 76, 45], blue: [217, 91, 60], purple: [258, 90, 66],
+      amber: [38, 92, 50], teal: [174, 72, 41], rose: [350, 89, 60]
+    };
+    var a = ACC[p.accent] || ACC.emerald;
+    s.setProperty('--accent-h', a[0] + '');
+    s.setProperty('--accent-s', a[1] + '%');
+    s.setProperty('--accent-l', a[2] + '%');
+    s.setProperty('--accent', 'hsl(' + a[0] + ' ' + a[1] + '% ' + a[2] + '%)');
+  } catch (err) {
+    // qualquer falha => default dark, preserva a marca
+    try { document.documentElement.classList.add('dark'); document.documentElement.style.colorScheme = 'dark'; } catch (e) {}
+  }
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="inema-course" content="laya-curso">
+<meta name="description" content="Curso prático de Laya e Jev: decisões estruturadas, inferência local, triagem em português e avaliação crítica.">
+<title>Mesa de triagem em português | Laya & Jev · INEMA</title>
+<script type="application/json" data-inema-manifest>{"course": "laya-curso", "tracks": [{"n": "1", "title": "Fundamentos", "modules": [{"id": "1-1", "title": "Decidir não é conversar", "topics": 6, "href": "curso/trilha1/modulo-1-1.html"}, {"id": "1-2", "title": "As três primitivas", "topics": 6, "href": "curso/trilha1/modulo-1-2.html"}]}, {"n": "2", "title": "Motor local", "modules": [{"id": "2-1", "title": "Instalação e primeira inferência", "topics": 6, "href": "curso/trilha2/modulo-2-1.html"}, {"id": "2-2", "title": "Router, contexto e processamento", "topics": 6, "href": "curso/trilha2/modulo-2-2.html"}]}, {"n": "3", "title": "Aplicação prática", "modules": [{"id": "3-1", "title": "Mesa de triagem em português", "topics": 6, "href": "curso/trilha3/modulo-3-1.html"}, {"id": "3-2", "title": "Integração com agentes e processos", "topics": 6, "href": "curso/trilha3/modulo-3-2.html"}]}, {"n": "4", "title": "Qualidade e evolução", "modules": [{"id": "4-1", "title": "Benchmarks, calibração e avaliação", "topics": 6, "href": "curso/trilha4/modulo-4-1.html"}, {"id": "4-2", "title": "Especialização e projeto final", "topics": 6, "href": "curso/trilha4/modulo-4-2.html"}]}]}</script>
+<link rel="stylesheet" href="../../assets/course.css?v=1.0.0">
+<link rel="stylesheet" href="../../assets/learn.css">
+<style>:root{--track:#a78bfa}</style>
+</head>
+<body class="bg-dark-900 text-neutral-100">
+<a class="skip" href="#conteudo">Pular para conteúdo</a>
+<nav class="nav bg-dark-900 border-dark-600">
+<div class="nav-inner">
+<a class="brand" href="../../index.html">◈ LAYA</a>
+<a class="text-sky-400" href="https://inema.club" target="_blank" rel="noopener">INEMA.CLUB</a>
+<a href="https://inema.pro" target="_blank" rel="noopener">PRO</a>
+<div class="nav-tracks">
+<a class="track-link " href="../../curso/trilha1/index.html">T1 · Fundamentos</a>
+<a class="track-link " href="../../curso/trilha2/index.html">T2 · Motor local</a>
+<a class="track-link active" href="../../curso/trilha3/index.html">T3 · Aplicação prática</a>
+<a class="track-link " href="../../curso/trilha4/index.html">T4 · Qualidade e evolução</a>
+</div>
+<button id="theme-toggle" aria-label="Alternar claro e escuro" onclick="INEMA.setPref('theme',document.documentElement.classList.contains('dark')?'claro':'inema-dark')">☀ / ☾</button>
+</div>
+</nav>
+<main id="conteudo" class="wrap" data-inema-track="3">
+<div class="toolbar">
+<button data-inema-journey-open>Minha jornada</button>
+<button onclick="INEMA.resume()">Continuar de onde parei</button>
+<button data-inema-appearance-toggle="#appearance" aria-expanded="false">Aparência e leitura</button>
+</div>
+<div id="appearance" data-inema-appearance data-open="false">
+<strong>Seu conforto de leitura</strong>
+<div class="toolbar">
+<button data-inema-set-theme="inema-dark">Escuro</button>
+<button data-inema-set-theme="claro">Claro</button>
+<button data-inema-set-theme="sepia">Sépia</button>
+<button data-inema-set-theme="foco">Foco</button>
+<button data-inema-set-theme="contraste">Alto contraste</button>
+</div>
+<div class="toolbar">
+<button data-inema-set-fontscale="100">Fonte 100%</button>
+<button data-inema-set-fontscale="112">Fonte 112%</button>
+<button data-inema-set-fontscale="125">Fonte 125%</button>
+<button data-inema-set-leading="1.45">Entrelinha compacta</button>
+<button data-inema-set-leading="1.7">Entrelinha confortável</button>
+<button data-inema-set-linewidth="60">Coluna curta</button>
+<button data-inema-set-linewidth="75">Coluna larga</button>
+<button data-inema-set-font="system">Fonte sistema</button>
+<button data-inema-set-font="leitura">Fonte de leitura</button>
+<button data-inema-set-accent="amber">Acento âmbar</button>
+<button data-inema-set-accent="blue">Acento azul</button>
+</div>
+</div>
+<div class="breadcrumb">
+<a href="../../index.html">Início</a> / <a href="index.html">Trilha 3</a> / 3.1</div>
+<header class="module-hero">
+<span class="eyebrow">MÓDULO 3.1</span>
+<h1>Mesa de triagem em português</h1>
+<p class="lead">Use a aplicação e entenda suas fronteiras.</p>
+<div class="stats">
+<span>6 tópicos</span>
+<span>35–50 min com prática</span>
+<span>Aplicação prática</span>
+<span>Exercícios comentados</span>
+</div>
+</header>
+<div class="diagram">
+<svg class="w-full h-auto" viewBox="0 0 760 185" role="img" aria-label="Ticket em PT para Quatro sinais para Atendente" font-family="Inter,system-ui,sans-serif">
+<defs>
+<pattern id="3-1-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="1" fill="#64748b" opacity=".25"/>
+</pattern>
+<filter id="3-1-glow">
+<feGaussianBlur stdDeviation="1.8"/>
+</filter>
+</defs>
+<rect width="760" height="185" fill="url(#3-1-grid)"/>
+<path d="M240 92h30m220 0h30" stroke="#38bdf8" stroke-width="2"/>
+<g>
+<rect x="20" y="48" width="220" height="88" rx="12" fill="#111827" stroke="#a78bfa" stroke-width="2"/>
+<text x="130" y="98" fill="#e5e7eb" text-anchor="middle" font-size="18" font-weight="600">Ticket em PT</text>
+</g>
+<g>
+<rect x="270" y="48" width="220" height="88" rx="12" fill="#111827" stroke="#38bdf8" stroke-width="2"/>
+<text x="380" y="98" fill="#e5e7eb" text-anchor="middle" font-size="18" font-weight="600">Quatro sinais</text>
+</g>
+<g>
+<rect x="520" y="48" width="220" height="88" rx="12" fill="#111827" stroke="#a78bfa" stroke-width="2"/>
+<text x="630" y="98" fill="#e5e7eb" text-anchor="middle" font-size="18" font-weight="600">Atendente</text>
+</g>
+<text x="380" y="166" fill="#cbd5e1" text-anchor="middle" font-size="12">LAYA / INEMA · fluxo conceitual</text>
+</svg>
+</div>
+<div class="meter" data-inema-meter="modulo:3-1" aria-label="Progresso">
+<span>Seu progresso</span> <span data-inema-meter-frac>
+</span>
+<div class="inema-bar">
+<div class="inema-bar__fill" data-inema-meter-fill>
+</div>
+</div>
+</div>
+<div class="meter" data-inema-meter="curso" aria-label="Progresso">
+<span>Seu progresso</span> <span data-inema-meter-frac>
+</span>
+<div class="inema-bar">
+<div class="inema-bar__fill" data-inema-meter-fill>
+</div>
+</div>
+</div>
+<ol class="toc">
+<li>
+<a href="#topico-1">Abra a interface local</a>
+</li>
+<li>
+<a href="#topico-2">Leia o resultado como recomendação</a>
+</li>
+<li>
+<a href="#topico-3">A política fica fora do modelo</a>
+</li>
+<li>
+<a href="#topico-4">Use a API com contrato pequeno</a>
+</li>
+<li>
+<a href="#topico-5">Dados e exportação</a>
+</li>
+<li>
+<a href="#topico-6">Laboratório de ponta a ponta</a>
+</li>
+</ol>
+<section id="topico-1" class="topic" data-inema-topic="modulo-3-1#topico-1" data-inema-module="3-1">
+<div class="topic-heading">
+<span class="circle">1</span>
+<h2 class="text-2xl font-bold">Abra a interface local</h2>
+</div>
+<div class="inema-prose">
+<h3>O que é</h3>
+<p data-inema-block="modulo-3-1-t1-what">O comando serve inicia um servidor em 127.0.0.1, porta 8765 por padrão. Abra o endereço no navegador da mesma máquina. O formulário aceita assunto opcional e mensagem; botões de exemplo preenchem casos de cobrança, suporte e vendas sem disparar uma análise automaticamente.</p>
+<h3>Por que aprender</h3>
+<p data-inema-block="modulo-3-1-t1-why">O guia publicado no GitHub Pages é documentação estática; a interface de inferência roda na máquina que executa Python. Não confunda um link público do curso com um servidor de modelos. A primeira análise pode carregar os pesos e levar mais tempo.</p>
+</div>
+<div class="example">
+<strong>Exemplo aplicado</strong>
+<p data-inema-block="modulo-3-1-t1-example">python3 -m practical --device cuda serve --port 8765; abra http://127.0.0.1:8765.</p>
+</div>
+<div class="comparison">
+<div class="yes bg-emerald-900/20">
+<h3>✓ Aplicar com critério</h3>
+<p>Não. Pages serve HTML e assets. Para inferência, execute o projeto local; o curso e o guia explicam como fazê-lo.</p>
+</div>
+<div class="no bg-red-900/20">
+<h3>✗ Evitar a conclusão automática</h3>
+<p>O modelo roda no GitHub Pages?</p>
+<p>Não aceite uma resposta só pelo nome do campo ou pela aparência de precisão. Confira a definição e o contexto desta seção.</p>
+</div>
+</div>
+<h3>Conceitos-chave</h3>
+<div class="concepts">
+<div>
+<strong>Loopback</strong>
+<p>acesso local</p>
+</div>
+<div>
+<strong>Servidor</strong>
+<p>processo Python</p>
+</div>
+<div>
+<strong>Pages</strong>
+<p>site estático</p>
+</div>
+<div>
+<strong>Formulário</strong>
+<p>entrada controlada</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Teste sua compreensão</h3>
+<p>O modelo roda no GitHub Pages?</p>
+<details>
+<summary>Conferir resposta comentada</summary>
+<p>Não. Pages serve HTML e assets. Para inferência, execute o projeto local; o curso e o guia explicam como fazê-lo.</p>
+</details>
+</div>
+<div class="toolbar">
+<button class="justify-start" data-inema-read-toggle aria-pressed="false">Marcar como lido</button>
+<button class="justify-start" data-inema-doubt-toggle aria-pressed="false">Tenho uma dúvida</button>
+</div>
+</section>
+<section id="topico-2" class="topic" data-inema-topic="modulo-3-1#topico-2" data-inema-module="3-1">
+<div class="topic-heading">
+<span class="circle">2</span>
+<h2 class="text-2xl font-bold">Leia o resultado como recomendação</h2>
+</div>
+<div class="inema-prose">
+<h3>O que é</h3>
+<p data-inema-block="modulo-3-1-t2-what">A tela mostra departamento, confiança SDK, urgência, ameaça de cancelamento e pedido de reembolso. O JSON completo preserva distribuições e metadados para inspeção. Um campo numérico só é útil quando você conhece a pergunta que o gerou e a escala usada.</p>
+<h3>Por que aprender</h3>
+<p data-inema-block="modulo-3-1-t2-why">Comece pelo texto original, confira o setor sugerido e procure sinais contraditórios. Uma solicitação pode conter reembolso sem cancelamento; insatisfação não implica urgência crítica. A interface mantém revisão humana e informa que a calibração não foi validada no domínio do cliente.</p>
+</div>
+<div class="example">
+<strong>Exemplo aplicado</strong>
+<p data-inema-block="modulo-3-1-t2-example">Ticket: obrigado, o estorno chegou. A presença da palavra estorno não deve ser interpretada automaticamente como um novo pedido.</p>
+</div>
+<ol class="timeline">
+<li>
+<span class="circle">1</span>
+<div>
+<strong>Observe</strong>
+<p>Ticket: obrigado, o estorno chegou. A presença da palavra estorno não deve ser interpretada automaticamente como um novo pedido.</p>
+</div>
+</li>
+<li>
+<span class="circle">2</span>
+<div>
+<strong>Defina</strong>
+<p>A tela mostra departamento, confiança SDK, urgência, ameaça de cancelamento e pedido de reembolso.</p>
+</div>
+</li>
+<li>
+<span class="circle">3</span>
+<div>
+<strong>Confira</strong>
+<p>Não precisa exibir tudo no primeiro plano, mas deve permitir inspeção. O JSON expansível oferece detalhes sem transformar a tela em um painel técnico obrigatório.</p>
+</div>
+</li>
+</ol>
+<h3>Conceitos-chave</h3>
+<div class="concepts">
+<div>
+<strong>Leitura contextual</strong>
+<p>sentido completo</p>
+</div>
+<div>
+<strong>Sinal</strong>
+<p>previsão delimitada</p>
+</div>
+<div>
+<strong>Distribuição</strong>
+<p>alternativas</p>
+</div>
+<div>
+<strong>Recomendação</strong>
+<p>decisão revisável</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Teste sua compreensão</h3>
+<p>A interface deve esconder probabilidades baixas para parecer mais simples?</p>
+<details>
+<summary>Conferir resposta comentada</summary>
+<p>Não precisa exibir tudo no primeiro plano, mas deve permitir inspeção. O JSON expansível oferece detalhes sem transformar a tela em um painel técnico obrigatório.</p>
+</details>
+</div>
+<div class="toolbar">
+<button class="justify-start" data-inema-read-toggle aria-pressed="false">Marcar como lido</button>
+<button class="justify-start" data-inema-doubt-toggle aria-pressed="false">Tenho uma dúvida</button>
+</div>
+</section>
+<section id="topico-3" class="topic" data-inema-topic="modulo-3-1#topico-3" data-inema-module="3-1">
+<div class="topic-heading">
+<span class="circle">3</span>
+<h2 class="text-2xl font-bold">A política fica fora do modelo</h2>
+</div>
+<div class="inema-prose">
+<h3>O que é</h3>
+<p data-inema-block="modulo-3-1-t3-what">review_policy recebe respostas validadas e constrói o encaminhamento. A implementação retorna human_review em todos os casos e automated_action_executed false. O limiar de confiança acrescenta uma razão de revisão; não habilita ação automática. Essa fronteira é uma decisão explícita do produto.</p>
+<h3>Por que aprender</h3>
+<p data-inema-block="modulo-3-1-t3-why">Separar política e inferência permite modificar regras de operação sem reescrever o encoder. Também evita tratar act_probability, um campo aprendido do upstream, como permissão real para usar ferramentas, pagar valores ou apagar registros.</p>
+</div>
+<div class="example">
+<strong>Exemplo aplicado</strong>
+<p data-inema-block="modulo-3-1-t3-example">Modelo: refund_requested 0,95. Política: atendente deve conferir cobrança, identidade e regra de estorno em seus sistemas.</p>
+</div>
+<aside class="tip bg-primary/10 border-primary/30">
+<h3>Dica prática</h3>
+<p>Defina ações permitidas, valide qualidade com dados próprios, estabeleça limites e auditoria, teste falhas e aprove a política. Um limiar isolado não substitui esse trabalho.</p>
+</aside>
+<div class="codebox">
+<h3>Comando / esquema de referência</h3>
+<pre>
+<code>python3 -m practical serve --port 8765
+# Em outro terminal:
+curl -X POST http://127.0.0.1:8765/api/triage \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#x27;{&quot;message&quot;:&quot;Fui cobrado duas vezes.&quot;}&#x27;</code>
+</pre>
+</div>
+<h3>Conceitos-chave</h3>
+<div class="concepts">
+<div>
+<strong>Política</strong>
+<p>regra operacional</p>
+</div>
+<div>
+<strong>Autorização</strong>
+<p>permissão externa</p>
+</div>
+<div>
+<strong>Sinal aprendido</strong>
+<p>não é permissão</p>
+</div>
+<div>
+<strong>Revisão</strong>
+<p>responsabilidade humana</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Teste sua compreensão</h3>
+<p>O que precisa mudar antes de automatizar algum encaminhamento?</p>
+<details>
+<summary>Conferir resposta comentada</summary>
+<p>Defina ações permitidas, valide qualidade com dados próprios, estabeleça limites e auditoria, teste falhas e aprove a política. Um limiar isolado não substitui esse trabalho.</p>
+</details>
+</div>
+<div class="toolbar">
+<button class="justify-start" data-inema-read-toggle aria-pressed="false">Marcar como lido</button>
+<button class="justify-start" data-inema-doubt-toggle aria-pressed="false">Tenho uma dúvida</button>
+</div>
+</section>
+<section id="topico-4" class="topic" data-inema-topic="modulo-3-1#topico-4" data-inema-module="3-1">
+<div class="topic-heading">
+<span class="circle">4</span>
+<h2 class="text-2xl font-bold">Use a API com contrato pequeno</h2>
+</div>
+<div class="inema-prose">
+<h3>O que é</h3>
+<p data-inema-block="modulo-3-1-t4-what">POST /api/triage recebe somente message e subject. A validação rejeita campos extras, mensagem vazia e tamanho excessivo. GET /api/health informa se o servidor responde e se o modelo já foi carregado. O health não executa inferência nem garante qualidade preditiva.</p>
+<h3>Por que aprender</h3>
+<p data-inema-block="modulo-3-1-t4-why">Um consumidor deve checar o status HTTP antes de usar answers. A resposta 422 indica um problema de entrada, como limite de tokens; 503 indica indisponibilidade do modelo. Tratar ambas como setor other esconderia falhas e poluiria suas métricas.</p>
+</div>
+<div class="example">
+<strong>Exemplo aplicado</strong>
+<p data-inema-block="modulo-3-1-t4-example">Envie JSON com message; processe answers somente após HTTP 200. Registre o tipo de erro separado do rótulo previsto.</p>
+</div>
+<div class="comparison">
+<div class="yes bg-emerald-900/20">
+<h3>✓ Aplicar com critério</h3>
+<p>A checagem deve ser rápida e sem efeito caro. Ela distingue serviço vivo de modelo carregado; a inferência real continua sendo o teste do caminho completo.</p>
+</div>
+<div class="no bg-red-900/20">
+<h3>✗ Evitar a conclusão automática</h3>
+<p>Por que /api/health não carrega o modelo?</p>
+<p>Não aceite uma resposta só pelo nome do campo ou pela aparência de precisão. Confira a definição e o contexto desta seção.</p>
+</div>
+</div>
+<h3>Conceitos-chave</h3>
+<div class="concepts">
+<div>
+<strong>HTTP 200</strong>
+<p>resultado</p>
+</div>
+<div>
+<strong>HTTP 422</strong>
+<p>entrada inválida</p>
+</div>
+<div>
+<strong>HTTP 503</strong>
+<p>indisponibilidade</p>
+</div>
+<div>
+<strong>Health</strong>
+<p>estado do serviço</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Teste sua compreensão</h3>
+<p>Por que /api/health não carrega o modelo?</p>
+<details>
+<summary>Conferir resposta comentada</summary>
+<p>A checagem deve ser rápida e sem efeito caro. Ela distingue serviço vivo de modelo carregado; a inferência real continua sendo o teste do caminho completo.</p>
+</details>
+</div>
+<div class="toolbar">
+<button class="justify-start" data-inema-read-toggle aria-pressed="false">Marcar como lido</button>
+<button class="justify-start" data-inema-doubt-toggle aria-pressed="false">Tenho uma dúvida</button>
+</div>
+</section>
+<section id="topico-5" class="topic" data-inema-topic="modulo-3-1#topico-5" data-inema-module="3-1">
+<div class="topic-heading">
+<span class="circle">5</span>
+<h2 class="text-2xl font-bold">Dados e exportação</h2>
+</div>
+<div class="inema-prose">
+<h3>O que é</h3>
+<p data-inema-block="modulo-3-1-t5-what">A aplicação não grava automaticamente o texto dos tickets. O usuário pode baixar um resultado JSON, que contém previsões e metadados de execução. Os exemplos embarcados são sintéticos. Para avaliação própria, minimize os dados pessoais e defina onde os arquivos ficarão armazenados.</p>
+<h3>Por que aprender</h3>
+<p data-inema-block="modulo-3-1-t5-why">Rodar localmente evita enviar o ticket a uma API de inferência externa, mas os pesos precisam ser obtidos do Hub inicialmente. Logs do servidor e arquivos exportados também fazem parte da operação; revise suas configurações antes de usar dados reais.</p>
+</div>
+<div class="example">
+<strong>Exemplo aplicado</strong>
+<p data-inema-block="modulo-3-1-t5-example">Substitua nome, e-mail e número completo de documento por identificadores internos quando não forem necessários à classificação.</p>
+</div>
+<aside class="tip bg-primary/10 border-primary/30">
+<h3>Dica prática</h3>
+<p>Não. A máquina, os logs, os backups e as pessoas com acesso continuam relevantes. Use apenas os dados necessários e as regras da sua organização.</p>
+</aside>
+<h3>Conceitos-chave</h3>
+<div class="concepts">
+<div>
+<strong>Minimização</strong>
+<p>só o necessário</p>
+</div>
+<div>
+<strong>Exportação</strong>
+<p>escolha do usuário</p>
+</div>
+<div>
+<strong>Cache de pesos</strong>
+<p>download inicial</p>
+</div>
+<div>
+<strong>Retenção</strong>
+<p>tempo de guarda</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Teste sua compreensão</h3>
+<p>Se o modelo é local, qualquer dado pode ser colocado sem pensar?</p>
+<details>
+<summary>Conferir resposta comentada</summary>
+<p>Não. A máquina, os logs, os backups e as pessoas com acesso continuam relevantes. Use apenas os dados necessários e as regras da sua organização.</p>
+</details>
+</div>
+<div class="toolbar">
+<button class="justify-start" data-inema-read-toggle aria-pressed="false">Marcar como lido</button>
+<button class="justify-start" data-inema-doubt-toggle aria-pressed="false">Tenho uma dúvida</button>
+</div>
+</section>
+<section id="topico-6" class="topic" data-inema-topic="modulo-3-1#topico-6" data-inema-module="3-1">
+<div class="topic-heading">
+<span class="circle">6</span>
+<h2 class="text-2xl font-bold">Laboratório de ponta a ponta</h2>
+</div>
+<div class="inema-prose">
+<h3>O que é</h3>
+<p data-inema-block="modulo-3-1-t6-what">Execute o servidor, carregue um exemplo, analise, inspecione o JSON e baixe o resultado. Em seguida, altere uma frase de forma significativa: de vou cancelar para não vou cancelar. Compare o sinal de ameaça e registre se o modelo acompanhou a negação.</p>
+<h3>Por que aprender</h3>
+<p data-inema-block="modulo-3-1-t6-why">Esse teste revela comportamento real sem exigir um benchmark grande. Não altere o rótulo esperado depois de ver a resposta apenas para contar um acerto. Separe a revisão do esquema da avaliação: se mudar a pergunta, inicie uma nova versão do experimento.</p>
+</div>
+<div class="example">
+<strong>Exemplo aplicado</strong>
+<p data-inema-block="modulo-3-1-t6-example">Crie pares mínimos: quero reembolso versus não quero reembolso; serviço parado versus serviço voltou.</p>
+</div>
+<h3>Conceitos-chave</h3>
+<div class="concepts">
+<div>
+<strong>Par mínimo</strong>
+<p>alteração controlada</p>
+</div>
+<div>
+<strong>Negação</strong>
+<p>mudança semântica</p>
+</div>
+<div>
+<strong>Registro</strong>
+<p>evidência preservada</p>
+</div>
+<div>
+<strong>Versão</strong>
+<p>experimento distinto</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Teste sua compreensão</h3>
+<p>Qual entrega demonstra que o laboratório funcionou?</p>
+<details>
+<summary>Conferir resposta comentada</summary>
+<p>Dois resultados reais com mensagens contrastantes, dispositivo identificado, quatro perguntas respondidas e revisão humana preservada, acompanhados da sua análise dos acertos e erros.</p>
+</details>
+</div>
+<div class="toolbar">
+<button class="justify-start" data-inema-read-toggle aria-pressed="false">Marcar como lido</button>
+<button class="justify-start" data-inema-doubt-toggle aria-pressed="false">Tenho uma dúvida</button>
+</div>
+</section>
+<section class="summary">
+<h2>Resumo do módulo</h2>
+<ul>
+<li>Não. Pages serve HTML e assets. Para inferência, execute o projeto local; o curso e o guia explicam como fazê-lo.</li>
+<li>Defina ações permitidas, valide qualidade com dados próprios, estabeleça limites e auditoria, teste falhas e aprove a política. Um limiar isolado não substitui esse trabalho.</li>
+<li>Não. A máquina, os logs, os backups e as pessoas com acesso continuam relevantes. Use apenas os dados necessários e as regras da sua organização.</li>
+</ul>
+<p>Selecione um trecho da aula para destacar ou anotar. Dúvidas e notas ficam na sua jornada; exporte o JSON para fazer backup.</p>
+<div class="toolbar">
+<a class="button" href="index.html">← Mapa da trilha</a>
+<a class="button primary" href="../trilha3/modulo-3-2.html">Próximo: Integração com agentes e processos →</a>
+</div>
+</section>
+</main>
+<footer>
+<div class="wrap">Laya & Jev · INEMA · Curso v2 · Conteúdo revisado em 21/09/2026<br>
+<a href="../../fontes.html">Fontes e análise crítica</a> · <a href="https://inematds.github.io/laya/guia/">Guia do projeto</a> · <a href="https://github.com/inematds/laya-curso">Repositório do curso</a> · <a href="https://inema.club">INEMA.CLUB</a>
+</div>
+</footer>
+<dialog id="module-modal" aria-labelledby="modal-title">
+<div class="toolbar">
+<strong id="modal-title">Leitura do módulo</strong>
+<button onclick="closeModal()">Fechar</button>
+</div>
+<iframe title="Conteúdo completo do módulo" id="module-frame">
+</iframe>
+</dialog>
+<script src="../../assets/core.js">
+</script>
+<script src="../../assets/learn.js?v=1.0.0">
+</script>
+<script>document.addEventListener('DOMContentLoaded',function(){if(window.INEMA)INEMA.init();});</script>
+</body>
+</html>

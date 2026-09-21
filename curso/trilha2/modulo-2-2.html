@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+<script>(function () {
+  try {
+    var html = document.documentElement;
+    var DEF = { theme: 'inema-dark', font: 'inter', fontScale: 100, lineWidth: 68, leading: 1.7, accent: 'emerald' };
+    function clone(o) { var r = {}; for (var x in o) r[x] = o[x]; return r; }
+    var p = clone(DEF);
+    try {
+      var raw = localStorage.getItem('inema.prefs');
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          for (var k in DEF) if (parsed[k] != null) p[k] = parsed[k];
+        }
+      } else {
+        // fallback ao tema legado do v1
+        var legacy = localStorage.getItem('theme');
+        if (legacy === 'light') p.theme = 'claro';
+        else if (legacy === 'dark') p.theme = 'inema-dark';
+      }
+    } catch (e) { p = clone(DEF); }
+
+    // mapa tema -> (.dark on/off, data-theme, color-scheme)
+    var THEMES = {
+      'inema-dark': { dark: true,  attr: null,        cs: 'dark'  },
+      'claro':      { dark: false, attr: null,        cs: 'light' },
+      'sepia':      { dark: false, attr: 'sepia',     cs: 'light' },
+      'foco':       { dark: null,  attr: 'foco',      cs: null    },  // herda eixo atual
+      'contraste':  { dark: true,  attr: 'contraste', cs: 'dark'  }
+    };
+    var t = THEMES[p.theme] || THEMES['inema-dark'];
+
+    if (t.dark === true) html.classList.add('dark');
+    else if (t.dark === false) html.classList.remove('dark');
+    // 'foco' (null) preserva o que ja houver no atributo class do <html>
+
+    if (t.attr) html.setAttribute('data-theme', t.attr);
+    else html.removeAttribute('data-theme');
+
+    html.style.colorScheme = (t.cs ? t.cs : (html.classList.contains('dark') ? 'dark' : 'light'));
+
+    html.setAttribute('data-font', p.font || 'inter');
+    html.setAttribute('data-accent', p.accent || 'emerald');
+
+    // variaveis de leitura (espelham learn.js / learn.css) ANTES do paint
+    var s = html.style;
+    var scale = (+p.fontScale || 100);
+    s.setProperty('--inema-font-scale', (scale / 100).toString());
+    s.setProperty('font-size', scale + '%');               // :root em %, nunca px
+    s.setProperty('--measure', (+p.lineWidth || 68) + 'ch');
+    s.setProperty('--lh-body', (+p.leading || 1.7).toString());
+    var fam = p.font === 'system'
+      ? 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+      : (p.font === 'leitura'
+        ? '"Atkinson Hyperlegible", "Inter", system-ui, sans-serif'
+        : '"Inter", system-ui, sans-serif');
+    s.setProperty('--font-body', fam);
+
+    var ACC = {
+      emerald: [152, 76, 45], blue: [217, 91, 60], purple: [258, 90, 66],
+      amber: [38, 92, 50], teal: [174, 72, 41], rose: [350, 89, 60]
+    };
+    var a = ACC[p.accent] || ACC.emerald;
+    s.setProperty('--accent-h', a[0] + '');
+    s.setProperty('--accent-s', a[1] + '%');
+    s.setProperty('--accent-l', a[2] + '%');
+    s.setProperty('--accent', 'hsl(' + a[0] + ' ' + a[1] + '% ' + a[2] + '%)');
+  } catch (err) {
+    // qualquer falha => default dark, preserva a marca
+    try { document.documentElement.classList.add('dark'); document.documentElement.style.colorScheme = 'dark'; } catch (e) {}
+  }
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="inema-course" content="laya-curso">
+<meta name="description" content="Curso prático de Laya e Jev: decisões estruturadas, inferência local, triagem em português e avaliação crítica.">
+<title>Router, contexto e processamento | Laya & Jev · INEMA</title>
+<script type="application/json" data-inema-manifest>{"course": "laya-curso", "tracks": [{"n": "1", "title": "Fundamentos", "modules": [{"id": "1-1", "title": "Decidir não é conversar", "topics": 6, "href": "curso/trilha1/modulo-1-1.html"}, {"id": "1-2", "title": "As três primitivas", "topics": 6, "href": "curso/trilha1/modulo-1-2.html"}]}, {"n": "2", "title": "Motor local", "modules": [{"id": "2-1", "title": "Instalação e primeira inferência", "topics": 6, "href": "curso/trilha2/modulo-2-1.html"}, {"id": "2-2", "title": "Router, contexto e processamento", "topics": 6, "href": "curso/trilha2/modulo-2-2.html"}]}, {"n": "3", "title": "Aplicação prática", "modules": [{"id": "3-1", "title": "Mesa de triagem em português", "topics": 6, "href": "curso/trilha3/modulo-3-1.html"}, {"id": "3-2", "title": "Integração com agentes e processos", "topics": 6, "href": "curso/trilha3/modulo-3-2.html"}]}, {"n": "4", "title": "Qualidade e evolução", "modules": [{"id": "4-1", "title": "Benchmarks, calibração e avaliação", "topics": 6, "href": "curso/trilha4/modulo-4-1.html"}, {"id": "4-2", "title": "Especialização e projeto final", "topics": 6, "href": "curso/trilha4/modulo-4-2.html"}]}]}</script>
+<link rel="stylesheet" href="../../assets/course.css?v=1.0.0">
+<link rel="stylesheet" href="../../assets/learn.css">
+<style>:root{--track:#60a5fa}</style>
+</head>
+<body class="bg-dark-900 text-neutral-100">
+<a class="skip" href="#conteudo">Pular para conteúdo</a>
+<nav class="nav bg-dark-900 border-dark-600">
+<div class="nav-inner">
+<a class="brand" href="../../index.html">◈ LAYA</a>
+<a class="text-sky-400" href="https://inema.club" target="_blank" rel="noopener">INEMA.CLUB</a>
+<a href="https://inema.pro" target="_blank" rel="noopener">PRO</a>
+<div class="nav-tracks">
+<a class="track-link " href="../../curso/trilha1/index.html">T1 · Fundamentos</a>
+<a class="track-link active" href="../../curso/trilha2/index.html">T2 · Motor local</a>
+<a class="track-link " href="../../curso/trilha3/index.html">T3 · Aplicação prática</a>
+<a class="track-link " href="../../curso/trilha4/index.html">T4 · Qualidade e evolução</a>
+</div>
+<button id="theme-toggle" aria-label="Alternar claro e escuro" onclick="INEMA.setPref('theme',document.documentElement.classList.contains('dark')?'claro':'inema-dark')">☀ / ☾</button>
+</div>
+</nav>
+<main id="conteudo" class="wrap" data-inema-track="2">
+<div class="toolbar">
+<button data-inema-journey-open>Minha jornada</button>
+<button onclick="INEMA.resume()">Continuar de onde parei</button>
+<button data-inema-appearance-toggle="#appearance" aria-expanded="false">Aparência e leitura</button>
+</div>
+<div id="appearance" data-inema-appearance data-open="false">
+<strong>Seu conforto de leitura</strong>
+<div class="toolbar">
+<button data-inema-set-theme="inema-dark">Escuro</button>
+<button data-inema-set-theme="claro">Claro</button>
+<button data-inema-set-theme="sepia">Sépia</button>
+<button data-inema-set-theme="foco">Foco</button>
+<button data-inema-set-theme="contraste">Alto contraste</button>
+</div>
+<div class="toolbar">
+<button data-inema-set-fontscale="100">Fonte 100%</button>
+<button data-inema-set-fontscale="112">Fonte 112%</button>
+<button data-inema-set-fontscale="125">Fonte 125%</button>
+<button data-inema-set-leading="1.45">Entrelinha compacta</button>
+<button data-inema-set-leading="1.7">Entrelinha confortável</button>
+<button data-inema-set-linewidth="60">Coluna curta</button>
+<button data-inema-set-linewidth="75">Coluna larga</button>
+<button data-inema-set-font="system">Fonte sistema</button>
+<button data-inema-set-font="leitura">Fonte de leitura</button>
+<button data-inema-set-accent="amber">Acento âmbar</button>
+<button data-inema-set-accent="blue">Acento azul</button>
+</div>
+</div>
+<div class="breadcrumb">
+<a href="../../index.html">Início</a> / <a href="index.html">Trilha 2</a> / 2.2</div>
+<header class="module-hero">
+<span class="eyebrow">MÓDULO 2.2</span>
+<h1>Router, contexto e processamento</h1>
+<p class="lead">Evite encaminhar uma entrada ao modelo errado.</p>
+<div class="stats">
+<span>6 tópicos</span>
+<span>35–50 min com prática</span>
+<span>Motor local</span>
+<span>Exercícios comentados</span>
+</div>
+</header>
+<div class="diagram">
+<svg class="w-full h-auto" viewBox="0 0 760 185" role="img" aria-label="Idioma para Checkpoint para Limite de tokens" font-family="Inter,system-ui,sans-serif">
+<defs>
+<pattern id="2-2-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="1" fill="#64748b" opacity=".25"/>
+</pattern>
+<filter id="2-2-glow">
+<feGaussianBlur stdDeviation="1.8"/>
+</filter>
+</defs>
+<rect width="760" height="185" fill="url(#2-2-grid)"/>
+<path d="M240 92h30m220 0h30" stroke="#38bdf8" stroke-width="2"/>
+<g>
+<rect x="20" y="48" width="220" height="88" rx="12" fill="#111827" stroke="#60a5fa" stroke-width="2"/>
+<text x="130" y="98" fill="#e5e7eb" text-anchor="middle" font-size="18" font-weight="600">Idioma</text>
+</g>
+<g>
+<rect x="270" y="48" width="220" height="88" rx="12" fill="#111827" stroke="#38bdf8" stroke-width="2"/>
+<text x="380" y="98" fill="#e5e7eb" text-anchor="middle" font-size="18" font-weight="600">Checkpoint</text>
+</g>
+<g>
+<rect x="520" y="48" width="220" height="88" rx="12" fill="#111827" stroke="#60a5fa" stroke-width="2"/>
+<text x="630" y="98" fill="#e5e7eb" text-anchor="middle" font-size="18" font-weight="600">Limite de tokens</text>
+</g>
+<text x="380" y="166" fill="#cbd5e1" text-anchor="middle" font-size="12">LAYA / INEMA · fluxo conceitual</text>
+</svg>
+</div>
+<div class="meter" data-inema-meter="modulo:2-2" aria-label="Progresso">
+<span>Seu progresso</span> <span data-inema-meter-frac>
+</span>
+<div class="inema-bar">
+<div class="inema-bar__fill" data-inema-meter-fill>
+</div>
+</div>
+</div>
+<div class="meter" data-inema-meter="curso" aria-label="Progresso">
+<span>Seu progresso</span> <span data-inema-meter-frac>
+</span>
+<div class="inema-bar">
+<div class="inema-bar__fill" data-inema-meter-fill>
+</div>
+</div>
+</div>
+<ol class="toc">
+<li>
+<a href="#topico-1">O Router escolhe antes de prever</a>
+</li>
+<li>
+<a href="#topico-2">Português precisa de escolha explícita no laboratório</a>
+</li>
+<li>
+<a href="#topico-3">Orçamento de tokens é compartilhado</a>
+</li>
+<li>
+<a href="#topico-4">Muitas classes competem pelo mesmo espaço</a>
+</li>
+<li>
+<a href="#topico-5">Modelo residente e alternância de idioma</a>
+</li>
+<li>
+<a href="#topico-6">Batching e latência percebida</a>
+</li>
+</ol>
+<section id="topico-1" class="topic" data-inema-topic="modulo-2-2#topico-1" data-inema-module="2-2">
+<div class="topic-heading">
+<span class="circle">1</span>
+<h2 class="text-2xl font-bold">O Router escolhe antes de prever</h2>
+</div>
+<div class="inema-prose">
+<h3>O que é</h3>
+<p data-inema-block="modulo-2-2-t1-what">Router.route pode selecionar um checkpoint sem executar a rede neural. A decisão usa indicação explícita de modelo ou tarefa, configuração opcional de workflow, idioma informado e detecção de escrita ou idioma. Isso evita usar apenas a confiança posterior como defesa contra um modelo que não entende o texto.</p>
+<h3>Por que aprender</h3>
+<p data-inema-block="modulo-2-2-t1-why">O código atual deve prevalecer sobre diagramas simplificados. typed-decisions não é selecionado automaticamente por padrão. Ativar auto_task_detection faz correspondência exata dos identificadores de quatro workflows; isso não é um entendimento universal do domínio.</p>
+</div>
+<div class="example">
+<strong>Exemplo aplicado</strong>
+<p data-inema-block="modulo-2-2-t1-example">Router().route({&quot;message&quot;:&quot;Cobrança duplicada&quot;}, questions, lang=&quot;pt&quot;) escolhe multilingual.</p>
+</div>
+<div class="comparison">
+<div class="yes bg-emerald-900/20">
+<h3>✓ Aplicar com critério</h3>
+<p>Não. A detecção opcional exige o conjunto exato de identificadores de um workflow, e vem desabilitada por padrão.</p>
+</div>
+<div class="no bg-red-900/20">
+<h3>✗ Evitar a conclusão automática</h3>
+<p>Um campo urgency é suficiente para selecionar typed-decisions?</p>
+<p>Não aceite uma resposta só pelo nome do campo ou pela aparência de precisão. Confira a definição e o contexto desta seção.</p>
+</div>
+</div>
+<h3>Conceitos-chave</h3>
+<div class="concepts">
+<div>
+<strong>Roteamento</strong>
+<p>seleção prévia</p>
+</div>
+<div>
+<strong>Override</strong>
+<p>indicação explícita</p>
+</div>
+<div>
+<strong>Script</strong>
+<p>sistema de escrita</p>
+</div>
+<div>
+<strong>Workflow</strong>
+<p>esquema especializado</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Teste sua compreensão</h3>
+<p>Um campo urgency é suficiente para selecionar typed-decisions?</p>
+<details>
+<summary>Conferir resposta comentada</summary>
+<p>Não. A detecção opcional exige o conjunto exato de identificadores de um workflow, e vem desabilitada por padrão.</p>
+</details>
+</div>
+<div class="toolbar">
+<button class="justify-start" data-inema-read-toggle aria-pressed="false">Marcar como lido</button>
+<button class="justify-start" data-inema-doubt-toggle aria-pressed="false">Tenho uma dúvida</button>
+</div>
+</section>
+<section id="topico-2" class="topic" data-inema-topic="modulo-2-2#topico-2" data-inema-module="2-2">
+<div class="topic-heading">
+<span class="circle">2</span>
+<h2 class="text-2xl font-bold">Português precisa de escolha explícita no laboratório</h2>
+</div>
+<div class="inema-prose">
+<h3>O que é</h3>
+<p data-inema-block="modulo-2-2-t2-what">Português usa alfabeto latino, como inglês, e mensagens muito curtas oferecem pouca evidência para detecção automática. Como o contrato deste laboratório já declara atendimento em português, a implementação fixa multilingual. O SDK continua disponível para quem quiser experimentar roteamento dinâmico em outro fluxo.</p>
+<h3>Por que aprender</h3>
+<p data-inema-block="modulo-2-2-t2-why">Uma regra simples baseada em informação confiável do produto pode superar uma heurística de idioma. Se a interface sabe que a fila é brasileira, não precisa adivinhar isso em cada ticket. Teste separadamente abreviações, erros de digitação e mensagens misturadas.</p>
+</div>
+<div class="example">
+<strong>Exemplo aplicado</strong>
+<p data-inema-block="modulo-2-2-t2-example">Olá contém pouca informação; a fila de atendimento define o checkpoint, não a confiança de uma previsão posterior.</p>
+</div>
+<ol class="timeline">
+<li>
+<span class="circle">1</span>
+<div>
+<strong>Observe</strong>
+<p>Olá contém pouca informação; a fila de atendimento define o checkpoint, não a confiança de uma previsão posterior.</p>
+</div>
+</li>
+<li>
+<span class="circle">2</span>
+<div>
+<strong>Defina</strong>
+<p>Português usa alfabeto latino, como inglês, e mensagens muito curtas oferecem pouca evidência para detecção automática.</p>
+</div>
+</li>
+<li>
+<span class="circle">3</span>
+<div>
+<strong>Confira</strong>
+<p>Não. Cobertura declarada de idiomas não garante desempenho no vocabulário, nos produtos e nas expressões dos seus clientes.</p>
+</div>
+</li>
+</ol>
+<h3>Conceitos-chave</h3>
+<div class="concepts">
+<div>
+<strong>Idioma conhecido</strong>
+<p>metadado confiável</p>
+</div>
+<div>
+<strong>Texto curto</strong>
+<p>pouca evidência</p>
+</div>
+<div>
+<strong>Heurística</strong>
+<p>aproximação</p>
+</div>
+<div>
+<strong>Contrato linguístico</strong>
+<p>escopo</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Teste sua compreensão</h3>
+<p>O modelo multilíngue dispensa testes em português?</p>
+<details>
+<summary>Conferir resposta comentada</summary>
+<p>Não. Cobertura declarada de idiomas não garante desempenho no vocabulário, nos produtos e nas expressões dos seus clientes.</p>
+</details>
+</div>
+<div class="toolbar">
+<button class="justify-start" data-inema-read-toggle aria-pressed="false">Marcar como lido</button>
+<button class="justify-start" data-inema-doubt-toggle aria-pressed="false">Tenho uma dúvida</button>
+</div>
+</section>
+<section id="topico-3" class="topic" data-inema-topic="modulo-2-2#topico-3" data-inema-module="2-2">
+<div class="topic-heading">
+<span class="circle">3</span>
+<h2 class="text-2xl font-bold">Orçamento de tokens é compartilhado</h2>
+</div>
+<div class="inema-prose">
+<h3>O que é</h3>
+<p data-inema-block="modulo-2-2-t3-what">O prompt interno reserva espaço para pergunta e opções; o restante acomoda o estado. O checkpoint multilingual usa normalmente max_len 1024 e head_max_len 256. Esses números não equivalem a caracteres nem asseguram que qualquer documento com menos de 1024 palavras caiba.</p>
+<h3>Por que aprender</h3>
+<p data-inema-block="modulo-2-2-t3-why">O SDK pode truncar o estado. Na adaptação, calculamos o espaço disponível para cada pergunta e rejeitamos entradas que perderiam tokens. Cortar o final de uma mensagem pode remover justamente a negação, a data ou o pedido principal.</p>
+</div>
+<div class="example">
+<strong>Exemplo aplicado</strong>
+<p data-inema-block="modulo-2-2-t3-example">Um histórico longo termina com já recebi o estorno. Se esse trecho for cortado, a decisão pode representar uma situação superada.</p>
+</div>
+<aside class="tip bg-primary/10 border-primary/30">
+<h3>Dica prática</h3>
+<p>A relação entre caracteres e tokens varia. A proteção definitiva usa o tokenizer real e o menor espaço disponível entre as quatro perguntas.</p>
+</aside>
+<div class="codebox">
+<h3>Comando / esquema de referência</h3>
+<pre>
+<code>from laya import Router
+from practical.engine import QUESTIONS
+router = Router(max_loaded=1)
+router.preload([&quot;multilingual&quot;])
+result = router.predict(
+    {&quot;message&quot;: &quot;Fui cobrado duas vezes.&quot;},
+    QUESTIONS, model=&quot;multilingual&quot;, lang=&quot;pt&quot;)</code>
+</pre>
+</div>
+<h3>Conceitos-chave</h3>
+<div class="concepts">
+<div>
+<strong>Token</strong>
+<p>unidade do tokenizer</p>
+</div>
+<div>
+<strong>Head</strong>
+<p>pergunta e opções</p>
+</div>
+<div>
+<strong>Estado</strong>
+<p>conteúdo do ticket</p>
+</div>
+<div>
+<strong>Truncamento</strong>
+<p>perda de entrada</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Teste sua compreensão</h3>
+<p>Por que o limite da interface em caracteres não basta?</p>
+<details>
+<summary>Conferir resposta comentada</summary>
+<p>A relação entre caracteres e tokens varia. A proteção definitiva usa o tokenizer real e o menor espaço disponível entre as quatro perguntas.</p>
+</details>
+</div>
+<div class="toolbar">
+<button class="justify-start" data-inema-read-toggle aria-pressed="false">Marcar como lido</button>
+<button class="justify-start" data-inema-doubt-toggle aria-pressed="false">Tenho uma dúvida</button>
+</div>
+</section>
+<section id="topico-4" class="topic" data-inema-topic="modulo-2-2#topico-4" data-inema-module="2-2">
+<div class="topic-heading">
+<span class="circle">4</span>
+<h2 class="text-2xl font-bold">Muitas classes competem pelo mesmo espaço</h2>
+</div>
+<div class="inema-prose">
+<h3>O que é</h3>
+<p data-inema-block="modulo-2-2-t4-what">Cada alternativa precisa ter marcadores e texto suficiente para permanecer distinguível. Dezenas de opções consomem o orçamento do cabeçalho. Em classificações grandes, rótulos parecidos podem ficar quase idênticos após cortes. O relatório do projeto usa Banking77 para mostrar esse limite.</p>
+<h3>Por que aprender</h3>
+<p data-inema-block="modulo-2-2-t4-why">Uma alternativa é hierarquia: primeiro escolha uma família e depois uma subcategoria. Isso reduz opções por etapa, mas erros da primeira escolha se propagam. Compare o conjunto completo e mantenha um caminho de revisão para casos entre famílias.</p>
+</div>
+<div class="example">
+<strong>Exemplo aplicado</strong>
+<p data-inema-block="modulo-2-2-t4-example">Primeiro financeiro versus técnico; depois cobrança duplicada versus nota fiscal, dentro da família escolhida.</p>
+</div>
+<div class="comparison">
+<div class="yes bg-emerald-900/20">
+<h3>✓ Aplicar com critério</h3>
+<p>Não. Pode reduzir o espaço do estado e aumentar custo; ainda é necessário medir qualidade, memória e latência com as novas configurações.</p>
+</div>
+<div class="no bg-red-900/20">
+<h3>✗ Evitar a conclusão automática</h3>
+<p>Aumentar head_max_len resolve qualquer número de categorias?</p>
+<p>Não aceite uma resposta só pelo nome do campo ou pela aparência de precisão. Confira a definição e o contexto desta seção.</p>
+</div>
+</div>
+<h3>Conceitos-chave</h3>
+<div class="concepts">
+<div>
+<strong>Cardinalidade</strong>
+<p>número de classes</p>
+</div>
+<div>
+<strong>Hierarquia</strong>
+<p>etapas de seleção</p>
+</div>
+<div>
+<strong>Propagação</strong>
+<p>erro encadeado</p>
+</div>
+<div>
+<strong>Descrição</strong>
+<p>sinal discriminativo</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Teste sua compreensão</h3>
+<p>Aumentar head_max_len resolve qualquer número de categorias?</p>
+<details>
+<summary>Conferir resposta comentada</summary>
+<p>Não. Pode reduzir o espaço do estado e aumentar custo; ainda é necessário medir qualidade, memória e latência com as novas configurações.</p>
+</details>
+</div>
+<div class="toolbar">
+<button class="justify-start" data-inema-read-toggle aria-pressed="false">Marcar como lido</button>
+<button class="justify-start" data-inema-doubt-toggle aria-pressed="false">Tenho uma dúvida</button>
+</div>
+</section>
+<section id="topico-5" class="topic" data-inema-topic="modulo-2-2#topico-5" data-inema-module="2-2">
+<div class="topic-heading">
+<span class="circle">5</span>
+<h2 class="text-2xl font-bold">Modelo residente e alternância de idioma</h2>
+</div>
+<div class="inema-prose">
+<h3>O que é</h3>
+<p data-inema-block="modulo-2-2-t5-what">O Router padrão mantém poucos modelos quentes e pode descartar o menos recente. Quando duas línguas alternam checkpoints e só um cabe na política de cache, o custo de reconstrução domina a chamada. Preload ou max_loaded maior resolve a troca, desde que a memória comporte os modelos.</p>
+<h3>Por que aprender</h3>
+<p data-inema-block="modulo-2-2-t5-why">Medições devem distinguir o caminho quente da primeira carga e das trocas. A aplicação prática evita alternância ao manter apenas multilingual. O lock impede que duas requisições mexam simultaneamente no carregamento e no runtime compartilhado.</p>
+</div>
+<div class="example">
+<strong>Exemplo aplicado</strong>
+<p data-inema-block="modulo-2-2-t5-example">Uma API que recria Router a cada ticket perde o benefício de residência. Crie uma instância por processo.</p>
+</div>
+<aside class="tip bg-primary/10 border-primary/30">
+<h3>Dica prática</h3>
+<p>Não. Cada processo pode carregar sua própria cópia dos pesos. Meça memória e throughput antes de aumentar o número de workers.</p>
+</aside>
+<h3>Conceitos-chave</h3>
+<div class="concepts">
+<div>
+<strong>LRU</strong>
+<p>descarte por uso</p>
+</div>
+<div>
+<strong>Hot path</strong>
+<p>modelo carregado</p>
+</div>
+<div>
+<strong>Cold start</strong>
+<p>primeira carga</p>
+</div>
+<div>
+<strong>Lock</strong>
+<p>acesso serializado</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Teste sua compreensão</h3>
+<p>Mais workers sempre aumentam a capacidade?</p>
+<details>
+<summary>Conferir resposta comentada</summary>
+<p>Não. Cada processo pode carregar sua própria cópia dos pesos. Meça memória e throughput antes de aumentar o número de workers.</p>
+</details>
+</div>
+<div class="toolbar">
+<button class="justify-start" data-inema-read-toggle aria-pressed="false">Marcar como lido</button>
+<button class="justify-start" data-inema-doubt-toggle aria-pressed="false">Tenho uma dúvida</button>
+</div>
+</section>
+<section id="topico-6" class="topic" data-inema-topic="modulo-2-2#topico-6" data-inema-module="2-2">
+<div class="topic-heading">
+<span class="circle">6</span>
+<h2 class="text-2xl font-bold">Batching e latência percebida</h2>
+</div>
+<div class="inema-prose">
+<h3>O que é</h3>
+<p data-inema-block="modulo-2-2-t6-what">Laya agrupa as perguntas de um estado em uma chamada. O laboratório não implementa agregação de vários tickets de usuários diferentes. A latência vista na interface inclui espera, HTTP, carregamento inicial e inferência; runtime.inference_ms informa apenas a etapa medida pelo motor após preparação.</p>
+<h3>Por que aprender</h3>
+<p data-inema-block="modulo-2-2-t6-why">Comparar milissegundos sem declarar fronteiras de medição gera conclusões frágeis. Registre número de perguntas e distribuição de comprimento das entradas. Para operação, percentis altos e falhas importam tanto quanto a média; uma amostra pequena não estima bem a cauda.</p>
+</div>
+<div class="example">
+<strong>Exemplo aplicado</strong>
+<p data-inema-block="modulo-2-2-t6-example">Quatro perguntas em um ticket não são quatro clientes atendidos. Throughput de perguntas e throughput de tickets têm denominadores diferentes.</p>
+</div>
+<h3>Conceitos-chave</h3>
+<div class="concepts">
+<div>
+<strong>Batch</strong>
+<p>lote de perguntas</p>
+</div>
+<div>
+<strong>p50</strong>
+<p>mediana</p>
+</div>
+<div>
+<strong>p95</strong>
+<p>cauda de latência</p>
+</div>
+<div>
+<strong>Throughput</strong>
+<p>unidades por segundo</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Teste sua compreensão</h3>
+<p>É correto dividir qualquer latência por quatro e prometer esse tempo por ticket?</p>
+<details>
+<summary>Conferir resposta comentada</summary>
+<p>Não. Dividir pode estimar custo médio por pergunta naquele lote; o usuário espera a conclusão do ticket completo.</p>
+</details>
+</div>
+<div class="toolbar">
+<button class="justify-start" data-inema-read-toggle aria-pressed="false">Marcar como lido</button>
+<button class="justify-start" data-inema-doubt-toggle aria-pressed="false">Tenho uma dúvida</button>
+</div>
+</section>
+<section class="summary">
+<h2>Resumo do módulo</h2>
+<ul>
+<li>Não. A detecção opcional exige o conjunto exato de identificadores de um workflow, e vem desabilitada por padrão.</li>
+<li>A relação entre caracteres e tokens varia. A proteção definitiva usa o tokenizer real e o menor espaço disponível entre as quatro perguntas.</li>
+<li>Não. Cada processo pode carregar sua própria cópia dos pesos. Meça memória e throughput antes de aumentar o número de workers.</li>
+</ul>
+<p>Selecione um trecho da aula para destacar ou anotar. Dúvidas e notas ficam na sua jornada; exporte o JSON para fazer backup.</p>
+<div class="toolbar">
+<a class="button" href="index.html">← Mapa da trilha</a>
+<a class="button primary" href="../trilha3/modulo-3-1.html">Próximo: Mesa de triagem em português →</a>
+</div>
+</section>
+</main>
+<footer>
+<div class="wrap">Laya & Jev · INEMA · Curso v2 · Conteúdo revisado em 21/09/2026<br>
+<a href="../../fontes.html">Fontes e análise crítica</a> · <a href="https://inematds.github.io/laya/guia/">Guia do projeto</a> · <a href="https://github.com/inematds/laya-curso">Repositório do curso</a> · <a href="https://inema.club">INEMA.CLUB</a>
+</div>
+</footer>
+<dialog id="module-modal" aria-labelledby="modal-title">
+<div class="toolbar">
+<strong id="modal-title">Leitura do módulo</strong>
+<button onclick="closeModal()">Fechar</button>
+</div>
+<iframe title="Conteúdo completo do módulo" id="module-frame">
+</iframe>
+</dialog>
+<script src="../../assets/core.js">
+</script>
+<script src="../../assets/learn.js?v=1.0.0">
+</script>
+<script>document.addEventListener('DOMContentLoaded',function(){if(window.INEMA)INEMA.init();});</script>
+</body>
+</html>

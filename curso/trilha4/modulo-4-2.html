@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+<script>(function () {
+  try {
+    var html = document.documentElement;
+    var DEF = { theme: 'inema-dark', font: 'inter', fontScale: 100, lineWidth: 68, leading: 1.7, accent: 'emerald' };
+    function clone(o) { var r = {}; for (var x in o) r[x] = o[x]; return r; }
+    var p = clone(DEF);
+    try {
+      var raw = localStorage.getItem('inema.prefs');
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          for (var k in DEF) if (parsed[k] != null) p[k] = parsed[k];
+        }
+      } else {
+        // fallback ao tema legado do v1
+        var legacy = localStorage.getItem('theme');
+        if (legacy === 'light') p.theme = 'claro';
+        else if (legacy === 'dark') p.theme = 'inema-dark';
+      }
+    } catch (e) { p = clone(DEF); }
+
+    // mapa tema -> (.dark on/off, data-theme, color-scheme)
+    var THEMES = {
+      'inema-dark': { dark: true,  attr: null,        cs: 'dark'  },
+      'claro':      { dark: false, attr: null,        cs: 'light' },
+      'sepia':      { dark: false, attr: 'sepia',     cs: 'light' },
+      'foco':       { dark: null,  attr: 'foco',      cs: null    },  // herda eixo atual
+      'contraste':  { dark: true,  attr: 'contraste', cs: 'dark'  }
+    };
+    var t = THEMES[p.theme] || THEMES['inema-dark'];
+
+    if (t.dark === true) html.classList.add('dark');
+    else if (t.dark === false) html.classList.remove('dark');
+    // 'foco' (null) preserva o que ja houver no atributo class do <html>
+
+    if (t.attr) html.setAttribute('data-theme', t.attr);
+    else html.removeAttribute('data-theme');
+
+    html.style.colorScheme = (t.cs ? t.cs : (html.classList.contains('dark') ? 'dark' : 'light'));
+
+    html.setAttribute('data-font', p.font || 'inter');
+    html.setAttribute('data-accent', p.accent || 'emerald');
+
+    // variaveis de leitura (espelham learn.js / learn.css) ANTES do paint
+    var s = html.style;
+    var scale = (+p.fontScale || 100);
+    s.setProperty('--inema-font-scale', (scale / 100).toString());
+    s.setProperty('font-size', scale + '%');               // :root em %, nunca px
+    s.setProperty('--measure', (+p.lineWidth || 68) + 'ch');
+    s.setProperty('--lh-body', (+p.leading || 1.7).toString());
+    var fam = p.font === 'system'
+      ? 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+      : (p.font === 'leitura'
+        ? '"Atkinson Hyperlegible", "Inter", system-ui, sans-serif'
+        : '"Inter", system-ui, sans-serif');
+    s.setProperty('--font-body', fam);
+
+    var ACC = {
+      emerald: [152, 76, 45], blue: [217, 91, 60], purple: [258, 90, 66],
+      amber: [38, 92, 50], teal: [174, 72, 41], rose: [350, 89, 60]
+    };
+    var a = ACC[p.accent] || ACC.emerald;
+    s.setProperty('--accent-h', a[0] + '');
+    s.setProperty('--accent-s', a[1] + '%');
+    s.setProperty('--accent-l', a[2] + '%');
+    s.setProperty('--accent', 'hsl(' + a[0] + ' ' + a[1] + '% ' + a[2] + '%)');
+  } catch (err) {
+    // qualquer falha => default dark, preserva a marca
+    try { document.documentElement.classList.add('dark'); document.documentElement.style.colorScheme = 'dark'; } catch (e) {}
+  }
+})();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="inema-course" content="laya-curso">
+<meta name="description" content="Curso prático de Laya e Jev: decisões estruturadas, inferência local, triagem em português e avaliação crítica.">
+<title>Especialização e projeto final | Laya & Jev · INEMA</title>
+<script type="application/json" data-inema-manifest>{"course": "laya-curso", "tracks": [{"n": "1", "title": "Fundamentos", "modules": [{"id": "1-1", "title": "Decidir não é conversar", "topics": 6, "href": "curso/trilha1/modulo-1-1.html"}, {"id": "1-2", "title": "As três primitivas", "topics": 6, "href": "curso/trilha1/modulo-1-2.html"}]}, {"n": "2", "title": "Motor local", "modules": [{"id": "2-1", "title": "Instalação e primeira inferência", "topics": 6, "href": "curso/trilha2/modulo-2-1.html"}, {"id": "2-2", "title": "Router, contexto e processamento", "topics": 6, "href": "curso/trilha2/modulo-2-2.html"}]}, {"n": "3", "title": "Aplicação prática", "modules": [{"id": "3-1", "title": "Mesa de triagem em português", "topics": 6, "href": "curso/trilha3/modulo-3-1.html"}, {"id": "3-2", "title": "Integração com agentes e processos", "topics": 6, "href": "curso/trilha3/modulo-3-2.html"}]}, {"n": "4", "title": "Qualidade e evolução", "modules": [{"id": "4-1", "title": "Benchmarks, calibração e avaliação", "topics": 6, "href": "curso/trilha4/modulo-4-1.html"}, {"id": "4-2", "title": "Especialização e projeto final", "topics": 6, "href": "curso/trilha4/modulo-4-2.html"}]}]}</script>
+<link rel="stylesheet" href="../../assets/course.css?v=1.0.0">
+<link rel="stylesheet" href="../../assets/learn.css">
+<style>:root{--track:#fbbf24}</style>
+</head>
+<body class="bg-dark-900 text-neutral-100">
+<a class="skip" href="#conteudo">Pular para conteúdo</a>
+<nav class="nav bg-dark-900 border-dark-600">
+<div class="nav-inner">
+<a class="brand" href="../../index.html">◈ LAYA</a>
+<a class="text-sky-400" href="https://inema.club" target="_blank" rel="noopener">INEMA.CLUB</a>
+<a href="https://inema.pro" target="_blank" rel="noopener">PRO</a>
+<div class="nav-tracks">
+<a class="track-link " href="../../curso/trilha1/index.html">T1 · Fundamentos</a>
+<a class="track-link " href="../../curso/trilha2/index.html">T2 · Motor local</a>
+<a class="track-link " href="../../curso/trilha3/index.html">T3 · Aplicação prática</a>
+<a class="track-link active" href="../../curso/trilha4/index.html">T4 · Qualidade e evolução</a>
+</div>
+<button id="theme-toggle" aria-label="Alternar claro e escuro" onclick="INEMA.setPref('theme',document.documentElement.classList.contains('dark')?'claro':'inema-dark')">☀ / ☾</button>
+</div>
+</nav>
+<main id="conteudo" class="wrap" data-inema-track="4">
+<div class="toolbar">
+<button data-inema-journey-open>Minha jornada</button>
+<button onclick="INEMA.resume()">Continuar de onde parei</button>
+<button data-inema-appearance-toggle="#appearance" aria-expanded="false">Aparência e leitura</button>
+</div>
+<div id="appearance" data-inema-appearance data-open="false">
+<strong>Seu conforto de leitura</strong>
+<div class="toolbar">
+<button data-inema-set-theme="inema-dark">Escuro</button>
+<button data-inema-set-theme="claro">Claro</button>
+<button data-inema-set-theme="sepia">Sépia</button>
+<button data-inema-set-theme="foco">Foco</button>
+<button data-inema-set-theme="contraste">Alto contraste</button>
+</div>
+<div class="toolbar">
+<button data-inema-set-fontscale="100">Fonte 100%</button>
+<button data-inema-set-fontscale="112">Fonte 112%</button>
+<button data-inema-set-fontscale="125">Fonte 125%</button>
+<button data-inema-set-leading="1.45">Entrelinha compacta</button>
+<button data-inema-set-leading="1.7">Entrelinha confortável</button>
+<button data-inema-set-linewidth="60">Coluna curta</button>
+<button data-inema-set-linewidth="75">Coluna larga</button>
+<button data-inema-set-font="system">Fonte sistema</button>
+<button data-inema-set-font="leitura">Fonte de leitura</button>
+<button data-inema-set-accent="amber">Acento âmbar</button>
+<button data-inema-set-accent="blue">Acento azul</button>
+</div>
+</div>
+<div class="breadcrumb">
+<a href="../../index.html">Início</a> / <a href="index.html">Trilha 4</a> / 4.2</div>
+<header class="module-hero">
+<span class="eyebrow">MÓDULO 4.2</span>
+<h1>Especialização e projeto final</h1>
+<p class="lead">Defina quando evoluir e quando parar.</p>
+<div class="stats">
+<span>6 tópicos</span>
+<span>35–50 min com prática</span>
+<span>Qualidade e evolução</span>
+<span>Exercícios comentados</span>
+</div>
+</header>
+<div class="diagram">
+<svg class="w-full h-auto" viewBox="0 0 760 185" role="img" aria-label="Treino para Calibração para Teste reservado" font-family="Inter,system-ui,sans-serif">
+<defs>
+<pattern id="4-2-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+<circle cx="1" cy="1" r="1" fill="#64748b" opacity=".25"/>
+</pattern>
+<filter id="4-2-glow">
+<feGaussianBlur stdDeviation="1.8"/>
+</filter>
+</defs>
+<rect width="760" height="185" fill="url(#4-2-grid)"/>
+<path d="M240 92h30m220 0h30" stroke="#38bdf8" stroke-width="2"/>
+<g>
+<rect x="20" y="48" width="220" height="88" rx="12" fill="#111827" stroke="#fbbf24" stroke-width="2"/>
+<text x="130" y="98" fill="#e5e7eb" text-anchor="middle" font-size="18" font-weight="600">Treino</text>
+</g>
+<g>
+<rect x="270" y="48" width="220" height="88" rx="12" fill="#111827" stroke="#38bdf8" stroke-width="2"/>
+<text x="380" y="98" fill="#e5e7eb" text-anchor="middle" font-size="18" font-weight="600">Calibração</text>
+</g>
+<g>
+<rect x="520" y="48" width="220" height="88" rx="12" fill="#111827" stroke="#fbbf24" stroke-width="2"/>
+<text x="630" y="98" fill="#e5e7eb" text-anchor="middle" font-size="18" font-weight="600">Teste reservado</text>
+</g>
+<text x="380" y="166" fill="#cbd5e1" text-anchor="middle" font-size="12">LAYA / INEMA · fluxo conceitual</text>
+</svg>
+</div>
+<div class="meter" data-inema-meter="modulo:4-2" aria-label="Progresso">
+<span>Seu progresso</span> <span data-inema-meter-frac>
+</span>
+<div class="inema-bar">
+<div class="inema-bar__fill" data-inema-meter-fill>
+</div>
+</div>
+</div>
+<div class="meter" data-inema-meter="curso" aria-label="Progresso">
+<span>Seu progresso</span> <span data-inema-meter-frac>
+</span>
+<div class="inema-bar">
+<div class="inema-bar__fill" data-inema-meter-fill>
+</div>
+</div>
+</div>
+<ol class="toc">
+<li>
+<a href="#topico-1">Comece pelo erro que importa</a>
+</li>
+<li>
+<a href="#topico-2">Construa dados com separação clara</a>
+</li>
+<li>
+<a href="#topico-3">O notebook de treinamento é uma referência</a>
+</li>
+<li>
+<a href="#topico-4">RLCD e regras de pontuação</a>
+</li>
+<li>
+<a href="#topico-5">Operação gradual e reversível</a>
+</li>
+<li>
+<a href="#topico-6">Entrega final: uma decisão explicável pelo processo</a>
+</li>
+</ol>
+<section id="topico-1" class="topic" data-inema-topic="modulo-4-2#topico-1" data-inema-module="4-2">
+<div class="topic-heading">
+<span class="circle">1</span>
+<h2 class="text-2xl font-bold">Comece pelo erro que importa</h2>
+</div>
+<div class="inema-prose">
+<h3>O que é</h3>
+<p data-inema-block="modulo-4-2-t1-what">Fine-tuning tem custo e só faz sentido quando os erros encontrados justificam mudar o modelo. Alguns problemas vêm de categorias ambíguas, estado incompleto ou checkpoint inadequado. Corrigir essas causas pode ser mais barato e mais eficaz que treinar uma rede nova.</p>
+<h3>Por que aprender</h3>
+<p data-inema-block="modulo-4-2-t1-why">Classifique erros antes de agir: erro de rótulo humano, de esquema, de contexto, de idioma ou de capacidade. Preserve exemplos e condições de execução. Depois escolha uma intervenção pequena e compare novamente, sem alterar várias variáveis ao mesmo tempo.</p>
+</div>
+<div class="example">
+<strong>Exemplo aplicado</strong>
+<p data-inema-block="modulo-4-2-t1-example">Se o estado não contém o pedido final, ampliar treinamento não recupera informação ausente.</p>
+</div>
+<div class="comparison">
+<div class="yes bg-emerald-900/20">
+<h3>✓ Aplicar com critério</h3>
+<p>Um contrato operacional ambíguo ou informação ausente. Primeiro defina o resultado desejado e forneça os fatos necessários.</p>
+</div>
+<div class="no bg-red-900/20">
+<h3>✗ Evitar a conclusão automática</h3>
+<p>Qual problema de triagem não se resolve apenas com fine-tuning?</p>
+<p>Não aceite uma resposta só pelo nome do campo ou pela aparência de precisão. Confira a definição e o contexto desta seção.</p>
+</div>
+</div>
+<h3>Conceitos-chave</h3>
+<div class="concepts">
+<div>
+<strong>Diagnóstico</strong>
+<p>causa provável</p>
+</div>
+<div>
+<strong>Intervenção</strong>
+<p>mudança controlada</p>
+</div>
+<div>
+<strong>Capacidade</strong>
+<p>aprendizado necessário</p>
+</div>
+<div>
+<strong>Custo</strong>
+<p>esforço total</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Teste sua compreensão</h3>
+<p>Qual problema de triagem não se resolve apenas com fine-tuning?</p>
+<details>
+<summary>Conferir resposta comentada</summary>
+<p>Um contrato operacional ambíguo ou informação ausente. Primeiro defina o resultado desejado e forneça os fatos necessários.</p>
+</details>
+</div>
+<div class="toolbar">
+<button class="justify-start" data-inema-read-toggle aria-pressed="false">Marcar como lido</button>
+<button class="justify-start" data-inema-doubt-toggle aria-pressed="false">Tenho uma dúvida</button>
+</div>
+</section>
+<section id="topico-2" class="topic" data-inema-topic="modulo-4-2#topico-2" data-inema-module="4-2">
+<div class="topic-heading">
+<span class="circle">2</span>
+<h2 class="text-2xl font-bold">Construa dados com separação clara</h2>
+</div>
+<div class="inema-prose">
+<h3>O que é</h3>
+<p data-inema-block="modulo-4-2-t2-what">Um dataset de domínio precisa representar linguagem, frequência de classes e casos difíceis da operação. Separe treino, calibração e teste por grupos que evitem vazamento, como conversa ou cliente. Mensagens quase duplicadas em partes diferentes podem inflar resultados.</p>
+<h3>Por que aprender</h3>
+<p data-inema-block="modulo-4-2-t2-why">Registre versão da rubrica e processo de rotulagem. Quando o rótulo vier de um modelo professor, trate-o como supervisão imperfeita. A concordância com o professor mede alinhamento com essa referência, não verdade universal nem qualidade garantida para clientes reais.</p>
+</div>
+<div class="example">
+<strong>Exemplo aplicado</strong>
+<p data-inema-block="modulo-4-2-t2-example">Uma conversa com cinco mensagens deve permanecer no mesmo split, para que o teste não revele apenas trechos já vistos.</p>
+</div>
+<ol class="timeline">
+<li>
+<span class="circle">1</span>
+<div>
+<strong>Observe</strong>
+<p>Uma conversa com cinco mensagens deve permanecer no mesmo split, para que o teste não revele apenas trechos já vistos.</p>
+</div>
+</li>
+<li>
+<span class="circle">2</span>
+<div>
+<strong>Defina</strong>
+<p>Um dataset de domínio precisa representar linguagem, frequência de classes e casos difíceis da operação.</p>
+</div>
+</li>
+<li>
+<span class="circle">3</span>
+<div>
+<strong>Confira</strong>
+<p>Mensagens da mesma conversa ou duplicatas podem aparecer em treino e teste, tornando o teste artificialmente fácil.</p>
+</div>
+</li>
+</ol>
+<h3>Conceitos-chave</h3>
+<div class="concepts">
+<div>
+<strong>Split</strong>
+<p>partição</p>
+</div>
+<div>
+<strong>Grupo</strong>
+<p>unidade de separação</p>
+</div>
+<div>
+<strong>Professor</strong>
+<p>fonte de rótulos</p>
+</div>
+<div>
+<strong>Vazamento</strong>
+<p>informação compartilhada</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Teste sua compreensão</h3>
+<p>Por que dividir aleatoriamente cada mensagem pode ser inadequado?</p>
+<details>
+<summary>Conferir resposta comentada</summary>
+<p>Mensagens da mesma conversa ou duplicatas podem aparecer em treino e teste, tornando o teste artificialmente fácil.</p>
+</details>
+</div>
+<div class="toolbar">
+<button class="justify-start" data-inema-read-toggle aria-pressed="false">Marcar como lido</button>
+<button class="justify-start" data-inema-doubt-toggle aria-pressed="false">Tenho uma dúvida</button>
+</div>
+</section>
+<section id="topico-3" class="topic" data-inema-topic="modulo-4-2#topico-3" data-inema-module="4-2">
+<div class="topic-heading">
+<span class="circle">3</span>
+<h2 class="text-2xl font-bold">O notebook de treinamento é uma referência</h2>
+</div>
+<div class="inema-prose">
+<h3>O que é</h3>
+<p data-inema-block="modulo-4-2-t3-what">O repositório inclui um notebook de fine-tuning para typed-decisions em duas GPUs T4. Ele prepara dados, treina, ajusta temperaturas e avalia. O tempo publicado é uma observação do autor para aquele ambiente e configuração, não uma estimativa garantida para sua máquina ou dataset.</p>
+<h3>Por que aprender</h3>
+<p data-inema-block="modulo-4-2-t3-why">Leia as células, checkpoints de saída e destino de publicação antes de executar. O curso não roda esse treinamento automaticamente nem anuncia um modelo treinado. O checkpoint usado no laboratório é o multilingual disponibilizado pelo upstream.</p>
+</div>
+<div class="example">
+<strong>Exemplo aplicado</strong>
+<p data-inema-block="modulo-4-2-t3-example">O notebook está em notebooks/laya_finetune_typed_decisions_2xT4_kaggle.ipynb no repositório prático.</p>
+</div>
+<aside class="tip bg-primary/10 border-primary/30">
+<h3>Dica prática</h3>
+<p>Não. Entrega o runtime adaptado, avaliação didática e roteiro de evolução. Treinar para um negócio exige dados e validação específicos.</p>
+</aside>
+<div class="codebox">
+<h3>Exemplo de raciocínio</h3>
+<pre>
+<code># Plano de experimento — não executa treinamento.
+1. Versionar rubrica e exemplos
+2. Separar treino / calibração / teste por conversa
+3. Medir baseline e modelo atual
+4. Ajustar somente no conjunto permitido
+5. Avaliar teste reservado
+6. Aprovar ou rejeitar a versão com critérios prévios</code>
+</pre>
+</div>
+<h3>Conceitos-chave</h3>
+<div class="concepts">
+<div>
+<strong>Notebook</strong>
+<p>execução por células</p>
+</div>
+<div>
+<strong>Época</strong>
+<p>passagem pelos dados</p>
+</div>
+<div>
+<strong>Checkpoint de saída</strong>
+<p>pesos novos</p>
+</div>
+<div>
+<strong>Publicação</strong>
+<p>etapa separada</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Teste sua compreensão</h3>
+<p>Este curso entrega um fine-tuning já feito para o seu negócio?</p>
+<details>
+<summary>Conferir resposta comentada</summary>
+<p>Não. Entrega o runtime adaptado, avaliação didática e roteiro de evolução. Treinar para um negócio exige dados e validação específicos.</p>
+</details>
+</div>
+<div class="toolbar">
+<button class="justify-start" data-inema-read-toggle aria-pressed="false">Marcar como lido</button>
+<button class="justify-start" data-inema-doubt-toggle aria-pressed="false">Tenho uma dúvida</button>
+</div>
+</section>
+<section id="topico-4" class="topic" data-inema-topic="modulo-4-2#topico-4" data-inema-module="4-2">
+<div class="topic-heading">
+<span class="circle">4</span>
+<h2 class="text-2xl font-bold">RLCD e regras de pontuação</h2>
+</div>
+<div class="inema-prose">
+<h3>O que é</h3>
+<p data-inema-block="modulo-4-2-t4-what">O trabalho usa recompensas baseadas em distribuições, incluindo componentes logarítmico e esférico e um termo ordinal para score. A ideia é premiar probabilidades úteis, e não apenas o rótulo vencedor. A implementação concreta também possui aproximações e detalhes que devem ser lidos no código.</p>
+<h3>Por que aprender</h3>
+<p data-inema-block="modulo-4-2-t4-why">Uma função de treino com propriedades desejáveis não garante calibração após treinamento finito ou mudança de domínio. Não apresente a matemática como dispensa de teste. As próprias fichas dos modelos registram excesso de confiança e necessidade de ajustar temperaturas.</p>
+</div>
+<div class="example">
+<strong>Exemplo aplicado</strong>
+<p data-inema-block="modulo-4-2-t4-example">Aprender uma distribuição e avaliar sua qualidade são etapas distintas; o resultado empírico pode contrariar a expectativa teórica.</p>
+</div>
+<div class="comparison">
+<div class="yes bg-emerald-900/20">
+<h3>✓ Aplicar com critério</h3>
+<p>Não por si só. Capacidade, otimização, amostra e distribuição de uso influenciam o resultado; a calibração precisa ser verificada empiricamente.</p>
+</div>
+<div class="no bg-red-900/20">
+<h3>✗ Evitar a conclusão automática</h3>
+<p>A escolha de uma regra própria garante que 90% previsto seja 90% real?</p>
+<p>Não aceite uma resposta só pelo nome do campo ou pela aparência de precisão. Confira a definição e o contexto desta seção.</p>
+</div>
+</div>
+<h3>Conceitos-chave</h3>
+<div class="concepts">
+<div>
+<strong>Regra própria</strong>
+<p>incentivo probabilístico</p>
+</div>
+<div>
+<strong>Recompensa</strong>
+<p>sinal de treino</p>
+</div>
+<div>
+<strong>Ordinalidade</strong>
+<p>distância entre níveis</p>
+</div>
+<div>
+<strong>Mudança de domínio</strong>
+<p>novos dados</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Teste sua compreensão</h3>
+<p>A escolha de uma regra própria garante que 90% previsto seja 90% real?</p>
+<details>
+<summary>Conferir resposta comentada</summary>
+<p>Não por si só. Capacidade, otimização, amostra e distribuição de uso influenciam o resultado; a calibração precisa ser verificada empiricamente.</p>
+</details>
+</div>
+<div class="toolbar">
+<button class="justify-start" data-inema-read-toggle aria-pressed="false">Marcar como lido</button>
+<button class="justify-start" data-inema-doubt-toggle aria-pressed="false">Tenho uma dúvida</button>
+</div>
+</section>
+<section id="topico-5" class="topic" data-inema-topic="modulo-4-2#topico-5" data-inema-module="4-2">
+<div class="topic-heading">
+<span class="circle">5</span>
+<h2 class="text-2xl font-bold">Operação gradual e reversível</h2>
+</div>
+<div class="inema-prose">
+<h3>O que é</h3>
+<p data-inema-block="modulo-4-2-t5-what">Uma evolução razoável começa em modo sombra: o modelo recomenda, humanos decidem e divergências são analisadas. Depois, uma organização pode aprovar ações simples e reversíveis em escopo estreito, mantendo registro e retorno à fila manual. Isso é um plano de evolução, não uma automação já implementada.</p>
+<h3>Por que aprender</h3>
+<p data-inema-block="modulo-4-2-t5-why">Defina métricas e critérios de parada antes do piloto. Uma subida de erros numa categoria rara pode importar mais que estabilidade da média. Mantenha versões do esquema, checkpoint e política juntas para reproduzir e desfazer mudanças quando necessário.</p>
+</div>
+<div class="example">
+<strong>Exemplo aplicado</strong>
+<p data-inema-block="modulo-4-2-t5-example">Se um novo produto muda o sentido de cobrança, a distribuição pode mudar. Reavalie com dados recentes antes de manter o mesmo limiar.</p>
+</div>
+<aside class="tip bg-primary/10 border-primary/30">
+<h3>Dica prática</h3>
+<p>Erros por classe, entradas recusadas, indisponibilidade, latência, cobertura de revisão e mudanças na distribuição dos tickets.</p>
+</aside>
+<h3>Conceitos-chave</h3>
+<div class="concepts">
+<div>
+<strong>Modo sombra</strong>
+<p>sem ação</p>
+</div>
+<div>
+<strong>Drift</strong>
+<p>mudança dos dados</p>
+</div>
+<div>
+<strong>Rollback</strong>
+<p>volta de versão</p>
+</div>
+<div>
+<strong>Critério de parada</strong>
+<p>limite definido</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Teste sua compreensão</h3>
+<p>O que monitorar além da acurácia média?</p>
+<details>
+<summary>Conferir resposta comentada</summary>
+<p>Erros por classe, entradas recusadas, indisponibilidade, latência, cobertura de revisão e mudanças na distribuição dos tickets.</p>
+</details>
+</div>
+<div class="toolbar">
+<button class="justify-start" data-inema-read-toggle aria-pressed="false">Marcar como lido</button>
+<button class="justify-start" data-inema-doubt-toggle aria-pressed="false">Tenho uma dúvida</button>
+</div>
+</section>
+<section id="topico-6" class="topic" data-inema-topic="modulo-4-2#topico-6" data-inema-module="4-2">
+<div class="topic-heading">
+<span class="circle">6</span>
+<h2 class="text-2xl font-bold">Entrega final: uma decisão explicável pelo processo</h2>
+</div>
+<div class="inema-prose">
+<h3>O que é</h3>
+<p data-inema-block="modulo-4-2-t6-what">Entregue o projeto funcionando, contrato das quatro perguntas, dataset versionado, relatório de inferência e análise de limitações. Explique por que o checkpoint foi escolhido, como a entrada é validada e onde a responsabilidade humana permanece. O processo deve permitir entender a decisão mesmo sem uma justificativa textual gerada pelo modelo.</p>
+<h3>Por que aprender</h3>
+<p data-inema-block="modulo-4-2-t6-why">Compare três exemplos: um claro, um ambíguo e um fora do domínio. Para cada um, apresente rótulo esperado, distribuição recebida, política e conclusão humana. Essa entrega demonstra domínio da arquitetura sem prometer uma inteligência universal nem esconder falhas.</p>
+</div>
+<div class="example">
+<strong>Exemplo aplicado</strong>
+<p data-inema-block="modulo-4-2-t6-example">O avaliador deve conseguir instalar, repetir o comando, encontrar o resultado e identificar o próximo experimento necessário.</p>
+</div>
+<h3>Conceitos-chave</h3>
+<div class="concepts">
+<div>
+<strong>Reprodutibilidade</strong>
+<p>repetir</p>
+</div>
+<div>
+<strong>Rastreabilidade</strong>
+<p>encontrar origem</p>
+</div>
+<div>
+<strong>Limitação</strong>
+<p>fronteira conhecida</p>
+</div>
+<div>
+<strong>Próximo experimento</strong>
+<p>hipótese</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Teste sua compreensão</h3>
+<p>Qual é o critério de conclusão do curso?</p>
+<details>
+<summary>Conferir resposta comentada</summary>
+<p>Você consegue executar pesos reais, interpretar choice/score/noul, avaliar uma amostra, distinguir benchmark de promessa e desenhar uma integração com permissões separadas do modelo.</p>
+</details>
+</div>
+<div class="toolbar">
+<button class="justify-start" data-inema-read-toggle aria-pressed="false">Marcar como lido</button>
+<button class="justify-start" data-inema-doubt-toggle aria-pressed="false">Tenho uma dúvida</button>
+</div>
+</section>
+<section class="summary">
+<h2>Resumo do módulo</h2>
+<ul>
+<li>Um contrato operacional ambíguo ou informação ausente. Primeiro defina o resultado desejado e forneça os fatos necessários.</li>
+<li>Não. Entrega o runtime adaptado, avaliação didática e roteiro de evolução. Treinar para um negócio exige dados e validação específicos.</li>
+<li>Erros por classe, entradas recusadas, indisponibilidade, latência, cobertura de revisão e mudanças na distribuição dos tickets.</li>
+</ul>
+<p>Selecione um trecho da aula para destacar ou anotar. Dúvidas e notas ficam na sua jornada; exporte o JSON para fazer backup.</p>
+<div class="toolbar">
+<a class="button" href="index.html">← Mapa da trilha</a>
+<a class="button primary" href="../../fontes.html">Revisar fontes e evidências →</a>
+</div>
+</section>
+</main>
+<footer>
+<div class="wrap">Laya & Jev · INEMA · Curso v2 · Conteúdo revisado em 21/09/2026<br>
+<a href="../../fontes.html">Fontes e análise crítica</a> · <a href="https://inematds.github.io/laya/guia/">Guia do projeto</a> · <a href="https://github.com/inematds/laya-curso">Repositório do curso</a> · <a href="https://inema.club">INEMA.CLUB</a>
+</div>
+</footer>
+<dialog id="module-modal" aria-labelledby="modal-title">
+<div class="toolbar">
+<strong id="modal-title">Leitura do módulo</strong>
+<button onclick="closeModal()">Fechar</button>
+</div>
+<iframe title="Conteúdo completo do módulo" id="module-frame">
+</iframe>
+</dialog>
+<script src="../../assets/core.js">
+</script>
+<script src="../../assets/learn.js?v=1.0.0">
+</script>
+<script>document.addEventListener('DOMContentLoaded',function(){if(window.INEMA)INEMA.init();});</script>
+</body>
+</html>
