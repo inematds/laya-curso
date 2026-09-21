@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+<head>
+<script>(function () {
+  try {
+    var html = document.documentElement;
+    var DEF = { theme: 'inema-dark', font: 'inter', fontScale: 100, lineWidth: 68, leading: 1.7, accent: 'emerald' };
+    function clone(o) { var r = {}; for (var x in o) r[x] = o[x]; return r; }
+    var p = clone(DEF);
+    try {
+      var raw = localStorage.getItem('inema.prefs');
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          for (var k in DEF) if (parsed[k] != null) p[k] = parsed[k];
+        }
+      } else {
+        // fallback ao tema legado do v1
+        var legacy = localStorage.getItem('theme');
+        if (legacy === 'light') p.theme = 'claro';
+        else if (legacy === 'dark') p.theme = 'inema-dark';
+      }
+    } catch (e) { p = clone(DEF); }
+
+    // mapa tema -> (.dark on/off, data-theme, color-scheme)
+    var THEMES = {
+      'inema-dark': { dark: true,  attr: null,        cs: 'dark'  },
+      'claro':      { dark: false, attr: null,        cs: 'light' },
+      'sepia':      { dark: false, attr: 'sepia',     cs: 'light' },
+      'foco':       { dark: null,  attr: 'foco',      cs: null    },  // herda eixo atual
+      'contraste':  { dark: true,  attr: 'contraste', cs: 'dark'  }
+    };
+    var t = THEMES[p.theme] || THEMES['inema-dark'];
+
+    if (t.dark === true) html.classList.add('dark');
+    else if (t.dark === false) html.classList.remove('dark');
+    // 'foco' (null) preserva o que ja houver no atributo class do <html>
+
+    if (t.attr) html.setAttribute('data-theme', t.attr);
+    else html.removeAttribute('data-theme');
+
+    html.style.colorScheme = (t.cs ? t.cs : (html.classList.contains('dark') ? 'dark' : 'light'));
+
+    html.setAttribute('data-font', p.font || 'inter');
+    html.setAttribute('data-accent', p.accent || 'emerald');
+
+    // variaveis de leitura (espelham learn.js / learn.css) ANTES do paint
+    var s = html.style;
+    var scale = (+p.fontScale || 100);
+    s.setProperty('--inema-font-scale', (scale / 100).toString());
+    s.setProperty('font-size', scale + '%');               // :root em %, nunca px
+    s.setProperty('--measure', (+p.lineWidth || 68) + 'ch');
+    s.setProperty('--lh-body', (+p.leading || 1.7).toString());
+    var fam = p.font === 'system'
+      ? 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+      : (p.font === 'leitura'
+        ? '"Atkinson Hyperlegible", "Inter", system-ui, sans-serif'
+        : '"Inter", system-ui, sans-serif');
+    s.setProperty('--font-body', fam);
+
+    var ACC = {
+      emerald: [152, 76, 45], blue: [217, 91, 60], purple: [258, 90, 66],
+      amber: [38, 92, 50], teal: [174, 72, 41], rose: [350, 89, 60]
+    };
+    var a = ACC[p.accent] || ACC.emerald;
+    s.setProperty('--accent-h', a[0] + '');
+    s.setProperty('--accent-s', a[1] + '%');
+    s.setProperty('--accent-l', a[2] + '%');
+    s.setProperty('--accent', 'hsl(' + a[0] + ' ' + a[1] + '% ' + a[2] + '%)');
+  } catch (err) {
+    // qualquer falha => default dark, preserva a marca
+    try { document.documentElement.classList.add('dark'); document.documentElement.style.colorScheme = 'dark'; } catch (e) {}
+  }
+})();
+</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="laya-curso-en" name="inema-course"/>
+<meta content="Practical course on Laya and Jev: structured decisions, local inference, triage in Portuguese, and critical evaluation." name="description"/>
+<title>Benchmarks, calibration and evaluation | Laya &amp; Jev · INEMA</title>
+<script data-inema-manifest="" type="application/json">{"course": "laya-curso-en", "tracks": [{"n": "1", "title": "Fundamentals", "modules": [{"id": "1-1", "title": "Deciding is not conversing", "topics": 6, "href": "curso/trilha1/modulo-1-1.html"}, {"id": "1-2", "title": "The three primitives", "topics": 6, "href": "curso/trilha1/modulo-1-2.html"}]}, {"n": "2", "title": "Local engine", "modules": [{"id": "2-1", "title": "Installation and first inference", "topics": 6, "href": "curso/trilha2/modulo-2-1.html"}, {"id": "2-2", "title": "Router, context, and processing", "topics": 6, "href": "curso/trilha2/modulo-2-2.html"}]}, {"n": "3", "title": "Practical application", "modules": [{"id": "3-1", "title": "Triage console in Portuguese", "topics": 6, "href": "curso/trilha3/modulo-3-1.html"}, {"id": "3-2", "title": "Integration with agents and processes", "topics": 6, "href": "curso/trilha3/modulo-3-2.html"}]}, {"n": "4", "title": "Quality and evolution", "modules": [{"id": "4-1", "title": "Benchmarks, calibration, and evaluation", "topics": 6, "href": "curso/trilha4/modulo-4-1.html"}, {"id": "4-2", "title": "Specialization and final project", "topics": 6, "href": "curso/trilha4/modulo-4-2.html"}]}]}</script>
+<link href="../../assets/course.css?v=1.1.0" rel="stylesheet"/>
+<link href="../../assets/learn.css" rel="stylesheet"/>
+<style>:root{--track:#fbbf24}</style>
+<link href="https://inematds.github.io/laya-curso/curso/trilha4/modulo-4-1.html" hreflang="pt-BR" rel="alternate"/><link href="https://inematds.github.io/laya-curso/en/curso/trilha4/modulo-4-1.html" hreflang="en" rel="alternate"/><link href="https://inematds.github.io/laya-curso/es/curso/trilha4/modulo-4-1.html" hreflang="es" rel="alternate"/><link href="https://inematds.github.io/laya-curso/curso/trilha4/modulo-4-1.html" hreflang="x-default" rel="alternate"/><link href="https://inematds.github.io/laya-curso/en/curso/trilha4/modulo-4-1.html" rel="canonical"/><style id="course-language-css">[data-course-languages]{position:fixed;bottom:0;left:0;right:0;z-index:60;display:flex;gap:1.25rem;padding:.65rem;justify-content:center;background:#111827;color:#f3f4f6}[data-course-languages] a{color:inherit;font:14px system-ui}[data-course-languages] [aria-current]{font-weight:bold;text-decoration:underline}[data-course-languages] a:focus-visible{outline:2px solid #38bdf8;outline-offset:4px}body{padding-bottom:75px}</style></head>
+<body class="bg-dark-900 text-neutral-100">
+<a class="skip" href="#conteudo">Jump to content</a>
+<nav class="nav bg-dark-900 border-dark-600">
+<div class="nav-inner">
+<a class="brand" href="../../index.html">◈ LAYA</a>
+<a class="text-sky-400" href="https://inema.club" rel="noopener" target="_blank">INEMA.CLUB</a>
+<a href="https://inema.pro" rel="noopener" target="_blank">PRO</a>
+<div class="nav-tracks">
+<a class="track-link" href="../../curso/trilha1/index.html">T1 · Fundamentals</a>
+<a class="track-link" href="../../curso/trilha2/index.html">T2 · Local engine</a>
+<a class="track-link" href="../../curso/trilha3/index.html">T3 · Practical application</a>
+<a class="track-link active" href="../../curso/trilha4/index.html">T4 · Quality and evolution</a>
+</div>
+<button aria-label="Toggle light and dark" id="theme-toggle" onclick="INEMA.setPref('theme',document.documentElement.classList.contains('dark')?'claro':'inema-dark')">☀ / ☾</button>
+</div>
+</nav>
+<main class="wrap" data-inema-track="4" id="conteudo">
+<div class="toolbar">
+<button data-inema-journey-open="">My journey</button>
+<button onclick="INEMA.resume()">Continue where I left off</button>
+<button aria-expanded="false" data-inema-appearance-toggle="#appearance">Appearance and reading</button>
+</div>
+<div data-inema-appearance="" data-open="false" id="appearance">
+<strong>Your reading comfort</strong>
+<div class="toolbar">
+<button data-inema-set-theme="inema-dark">Dark</button>
+<button data-inema-set-theme="claro">Light</button>
+<button data-inema-set-theme="sepia">Sepia</button>
+<button data-inema-set-theme="foco">Focus</button>
+<button data-inema-set-theme="contraste">High contrast</button>
+</div>
+<div class="toolbar">
+<button data-inema-set-fontscale="100">100% font</button>
+<button data-inema-set-fontscale="112">112% font</button>
+<button data-inema-set-fontscale="125">125% font</button>
+<button data-inema-set-leading="1.45">Compact line spacing</button>
+<button data-inema-set-leading="1.7">Comfortable line spacing</button>
+<button data-inema-set-linewidth="60">Short column</button>
+<button data-inema-set-linewidth="75">Wide column</button>
+<button data-inema-set-font="system">System font</button>
+<button data-inema-set-font="leitura">Reading font</button>
+<button data-inema-set-accent="amber">Amber accent</button>
+<button data-inema-set-accent="blue">Blue accent</button>
+</div>
+</div>
+<div class="breadcrumb">
+<a href="../../index.html">Start</a> / <a href="index.html">Track 4</a> / 4.1</div>
+<header class="module-hero">
+<span class="eyebrow">MODULE 4.1</span>
+<h1>Benchmarks, calibration, and evaluation</h1>
+<p class="lead">Compare what was actually measured.</p>
+<div class="stats">
+<span>6 topics</span>
+<span>35–50 min with practice</span>
+<span>Quality and evolution</span>
+<span>Commented exercises</span>
+</div>
+</header>
+<div class="diagram">
+<svg aria-label="Labeled data for Metrics to Conclusion" class="w-full h-auto" font-family="Inter,system-ui,sans-serif" role="img" viewbox="0 0 760 185">
+<defs>
+<pattern height="20" id="4-1-grid" patternunits="userSpaceOnUse" width="20">
+<circle cx="1" cy="1" fill="#64748b" opacity=".25" r="1"></circle>
+</pattern>
+<filter id="4-1-glow">
+<fegaussianblur stddeviation="1.8"></fegaussianblur>
+</filter>
+</defs>
+<rect fill="url(#4-1-grid)" height="185" width="760"></rect>
+<path d="M240 92h30m220 0h30" stroke="#38bdf8" stroke-width="2"></path>
+<g>
+<rect fill="#111827" height="88" rx="12" stroke="#fbbf24" stroke-width="2" width="220" x="20" y="48"></rect>
+<text fill="#e5e7eb" font-size="18" font-weight="600" text-anchor="middle" x="130" y="98">Labeled data</text>
+</g>
+<g>
+<rect fill="#111827" height="88" rx="12" stroke="#38bdf8" stroke-width="2" width="220" x="270" y="48"></rect>
+<text fill="#e5e7eb" font-size="18" font-weight="600" text-anchor="middle" x="380" y="98">Metrics</text>
+</g>
+<g>
+<rect fill="#111827" height="88" rx="12" stroke="#fbbf24" stroke-width="2" width="220" x="520" y="48"></rect>
+<text fill="#e5e7eb" font-size="18" font-weight="600" text-anchor="middle" x="630" y="98">Conclusion</text>
+</g>
+<text fill="#cbd5e1" font-size="12" text-anchor="middle" x="380" y="166">LAYA / INEMA · conceptual flow</text>
+</svg>
+</div>
+<div aria-label="Progress" class="meter" data-inema-meter="modulo:4-1">
+<span>Your progress</span> <span data-inema-meter-frac="">
+</span>
+<div class="inema-bar">
+<div class="inema-bar__fill" data-inema-meter-fill="">
+</div>
+</div>
+</div>
+<div aria-label="Progress" class="meter" data-inema-meter="curso">
+<span>Your progress</span> <span data-inema-meter-frac="">
+</span>
+<div class="inema-bar">
+<div class="inema-bar__fill" data-inema-meter-fill="">
+</div>
+</div>
+</div>
+<ol class="toc">
+<li>
+<a href="#topico-1">Read the comparison unit</a>
+</li>
+<li>
+<a href="#topico-2">The limits of zero-shot</a>
+</li>
+<li>
+<a href="#topico-3">Accuracy and confusion matrix</a>
+</li>
+<li>
+<a href="#topico-4">Brier and ECE answer different questions</a>
+</li>
+<li>
+<a href="#topico-5">Calibration requires reserved data</a>
+</li>
+<li>
+<a href="#topico-6">Run and interpret the local evaluation</a>
+</li>
+</ol>
+<section class="topic" data-inema-module="4-1" data-inema-topic="modulo-4-1#topico-1" id="topico-1">
+<div class="topic-heading">
+<span class="circle">1</span>
+<h2 class="text-2xl font-bold">Read the comparison unit</h2>
+</div>
+<div class="inema-prose">
+<h3>What it is</h3>
+<p data-inema-block="modulo-4-1-t1-what">The sources combine results from different benchmarks, tasks, and checkpoints. The performance of a specialized model does not describe the base model. The Jev numbers cited by Laya come from third parties and not from a controlled run by the same author using identical prompts.</p>
+<h3>Why learn</h3>
+<p data-inema-block="modulo-4-1-t1-why">Before repeating a percentage, note the model, the revision, the dataset, the number of classes, the number of examples, and the method. A table can be useful as an indication for investigation without supporting a universal ranking. The conditions must accompany the numbers in the report.</p>
+</div>
+<div class="example">
+<strong>Applied example</strong>
+<p data-inema-block="modulo-4-1-t1-example">Typed-decisions uses specific workflows; Banking77 tests many classes. Winning the first does not imply winning the second.</p>
+</div>
+<div class="comparison">
+<div class="yes bg-emerald-900/20">
+<h3>✓ Apply with criteria</h3>
+<p>Not without caveats. The answer space and the sample change the difficulty; record the difference and avoid attributing everything to the architecture.</p>
+</div>
+<div class="no bg-red-900/20">
+<h3>✗ Avoid the automatic conclusion</h3>
+<p>Can I compare 72 classes with 77 as if it were the same test?</p>
+<p>Don’t accept an answer just by the field name or by the appearance of precision. Check the definition and the context of this section.</p>
+</div>
+</div>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Protocol</strong>
+<p>conditions</p>
+</div>
+<div>
+<strong>Sample</strong>
+<p>used examples</p>
+</div>
+<div>
+<strong>Task</strong>
+<p>measured objective</p>
+</div>
+<div>
+<strong>Comparability</strong>
+<p>aligned conditions</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Test your understanding</h3>
+<p>Can I compare 72 classes with 77 as if it were the same test?</p>
+<details>
+<summary>Check the commented answer</summary>
+<p>Not without caveats. The answer space and the sample change the difficulty; record the difference and avoid attributing everything to the architecture.</p>
+</details>
+</div>
+<div class="toolbar">
+<button aria-pressed="false" class="justify-start" data-inema-read-toggle="">Mark as read</button>
+<button aria-pressed="false" class="justify-start" data-inema-doubt-toggle="">I have a question</button>
+</div>
+</section>
+<section class="topic" data-inema-module="4-1" data-inema-topic="modulo-4-1#topico-2" id="topico-2">
+<div class="topic-heading">
+<span class="circle">2</span>
+<h2 class="text-2xl font-bold">The limits of zero-shot</h2>
+</div>
+<div class="inema-prose">
+<h3>What it is</h3>
+<p data-inema-block="modulo-4-1-t2-what">The current report shows base checkpoints below the major-class baseline in typed-decisions, while the specialized version improves. This suggests that instructing new questions does not guarantee competence in the domain. Specialization and training data matter for interpreting the result.</p>
+<h3>Why learn</h3>
+<p data-inema-block="modulo-4-1-t2-why">In the lab, the small set of tickets is a functional smoke test. Even an excellent result does not validate real messages, abbreviations, adversarial cases, or rare categories. The next step is to gather representative examples before deciding to invest in training.</p>
+</div>
+<div class="example">
+<strong>Applied example</strong>
+<p data-inema-block="modulo-4-1-t2-example">A model trained for four synthetic workflows is not automatically a universal analyst of business processes.</p>
+</div>
+<ol class="timeline">
+<li>
+<span class="circle">1</span>
+<div>
+<strong>Observe</strong>
+<p>A model trained for four synthetic workflows is not automatically a universal analyst of business processes.</p>
+</div>
+</li>
+<li>
+<span class="circle">2</span>
+<div>
+<strong>Define</strong>
+<p>The current report shows baseline checkpoints below the majority class baseline in typed-decisions, while the specialized version improves.</p>
+</div>
+</li>
+<li>
+<span class="circle">3</span>
+<div>
+<strong>Check</strong>
+<p>No. The sheet specifies the specific scope and recommends your own validation; performance outside those workflows may drop.</p>
+</div>
+</li>
+</ol>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Zero-shot</strong>
+<p>task without fine-tuning</p>
+</div>
+<div>
+<strong>Baseline</strong>
+<p>simple reference</p>
+</div>
+<div>
+<strong>Specialist</strong>
+<p>fine-tuned model</p>
+</div>
+<div>
+<strong>Generalization</strong>
+<p>new data</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Test your understanding</h3>
+<p>If the specialized model has good accuracy, does that remove the need to test in another domain?</p>
+<details>
+<summary>Check the commented answer</summary>
+<p>No. The sheet specifies the specific scope and recommends your own validation; performance outside those workflows may drop.</p>
+</details>
+</div>
+<div class="toolbar">
+<button aria-pressed="false" class="justify-start" data-inema-read-toggle="">Mark as read</button>
+<button aria-pressed="false" class="justify-start" data-inema-doubt-toggle="">I have a question</button>
+</div>
+</section>
+<section class="topic" data-inema-module="4-1" data-inema-topic="modulo-4-1#topico-3" id="topico-3">
+<div class="topic-heading">
+<span class="circle">3</span>
+<h2 class="text-2xl font-bold">Accuracy and confusion matrix</h2>
+</div>
+<div class="inema-prose">
+<h3>What it is</h3>
+<p data-inema-block="modulo-4-1-t3-what">Accuracy is the fraction of correct predictions. It can hide imbalance and errors concentrated in a single class. A confusion matrix, for each expected label, shows which outputs were produced. Also compare a simple rule, such as always choosing the most frequent class.</p>
+<h3>Why learn</h3>
+<p data-inema-block="modulo-4-1-t3-why">In support, confusing sales with other can have a different impact than diverting a critical incident. Report errors by category and representative examples. With a small sample, show counts in addition to percentages so you don’t suggest statistical precision that the data doesn’t support.</p>
+</div>
+<div class="example">
+<strong>Applied example</strong>
+<p data-inema-block="modulo-4-1-t3-example">If 90 out of 100 tickets are financial, choosing billing will always give 90% accuracy, without understanding any text at all.</p>
+</div>
+<aside class="tip bg-primary/10 border-primary/30">
+<h3>Practical tip</h3>
+<p>To make the smoke test easy to inspect and to make the baseline explicit. This does not necessarily reproduce the real frequency of an operation.</p>
+</aside>
+<div class="codebox">
+<h3>Example of reasoning</h3>
+<pre>
+<code>python3 -m practical --device cuda evaluate --output avaliacao.json
+# Local sample: 16 synthetic tickets, 4 departments
+# 13/16 correct; majority baseline = 4/16
+# Educational result, not production validation.</code>
+</pre>
+</div>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Accuracy</strong>
+<p>correct fraction</p>
+</div>
+<div>
+<strong>Confusion</strong>
+<p>error between classes</p>
+</div>
+<div>
+<strong>Imbalance</strong>
+<p>unequal classes</p>
+</div>
+<div>
+<strong>Majority baseline</strong>
+<p>dominant class</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Test your understanding</h3>
+<p>Why does the training dataset include four classes in equal quantities?</p>
+<details>
+<summary>Check the commented answer</summary>
+<p>To make the smoke test easy to inspect and to make the baseline explicit. This does not necessarily reproduce the real frequency of an operation.</p>
+</details>
+</div>
+<div class="toolbar">
+<button aria-pressed="false" class="justify-start" data-inema-read-toggle="">Mark as read</button>
+<button aria-pressed="false" class="justify-start" data-inema-doubt-toggle="">I have a question</button>
+</div>
+</section>
+<section class="topic" data-inema-module="4-1" data-inema-topic="modulo-4-1#topico-4" id="topico-4">
+<div class="topic-heading">
+<span class="circle">4</span>
+<h2 class="text-2xl font-bold">Brier and ECE answer different questions</h2>
+</div>
+<div class="inema-prose">
+<h3>What it is</h3>
+<p data-inema-block="modulo-4-1-t4-what">The multiclass Brier score sums the squared error between probabilities and the one-hot label. ECE compares, in probability bins, average confidence and accuracy frequency. The implementation uses the probability of the chosen class in ten bins, not the SDK’s entropy-based confidence.</p>
+<h3>Why learn</h3>
+<p data-inema-block="modulo-4-1-t4-why">State the formula: some reports divide Brier by the number of classes, others sum it. ECE depends on the bins and the sample; with few cases, bins may be empty or unstable. A small value in sixteen examples is not proof of calibration.</p>
+</div>
+<div class="example">
+<strong>Applied example</strong>
+<p data-inema-block="modulo-4-1-t4-example">An incorrect prediction with probability 0.99 gets a larger penalty than a cautious distribution. Both can have the same argmax accuracy.</p>
+</div>
+<div class="comparison">
+<div class="yes bg-emerald-900/20">
+<h3>✓ Apply with criteria</h3>
+<p>Normalizations, classes, and datasets may differ. Even the same metric name does not guarantee an identical definition.</p>
+</div>
+<div class="no bg-red-900/20">
+<h3>✗ Avoid the automatic conclusion</h3>
+<p>Why not compare Brier from two reports without reading the method?</p>
+<p>Don’t accept an answer just by the field name or by the appearance of precision. Check the definition and the context of this section.</p>
+</div>
+</div>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Brier</strong>
+<p>error of the distribution</p>
+</div>
+<div>
+<strong>ECE</strong>
+<p>difference by bins</p>
+</div>
+<div>
+<strong>One-hot</strong>
+<p>single label</p>
+</div>
+<div>
+<strong>Bin</strong>
+<p>probability interval</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Test your understanding</h3>
+<p>Why not compare Brier from two reports without reading the method?</p>
+<details>
+<summary>Check the commented answer</summary>
+<p>Normalizations, classes, and datasets may differ. Even the same metric name does not guarantee an identical definition.</p>
+</details>
+</div>
+<div class="toolbar">
+<button aria-pressed="false" class="justify-start" data-inema-read-toggle="">Mark as read</button>
+<button aria-pressed="false" class="justify-start" data-inema-doubt-toggle="">I have a question</button>
+</div>
+</section>
+<section class="topic" data-inema-module="4-1" data-inema-topic="modulo-4-1#topico-5" id="topico-5">
+<div class="topic-heading">
+<span class="circle">5</span>
+<h2 class="text-2xl font-bold">Calibration requires reserved data</h2>
+</div>
+<div class="inema-prose">
+<h3>What it is</h3>
+<p data-inema-block="modulo-4-1-t5-what">Temperature scaling divides logits by a temperature before applying softmax. It can reduce overconfidence without improving the chosen classification. Adjusting the temperature and measuring its effect on the same data creates an optimistic estimate. Separate calibration from the final evaluation.</p>
+<h3>Why learn</h3>
+<p data-inema-block="modulo-4-1-t5-why">The multilingual checkpoint is described as not calibrated for the user’s domain. The lab reports this condition and does not pretend to perform calibration. Before trusting a threshold, gather enough data and track error rate versus coverage on the reserved set.</p>
+</div>
+<div class="example">
+<strong>Applied example</strong>
+<p data-inema-block="modulo-4-1-t5-example">Training teaches parameters; calibration adjusts probabilities; testing measures the final result without new adjustments.</p>
+</div>
+<aside class="tip bg-primary/10 border-primary/30">
+<h3>Practical tip</h3>
+<p>No. A single positive global temperature preserves the order of logits. It changes the distribution, not the ability to distinguish classes.</p>
+</aside>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Temperature</strong>
+<p>logits scale</p>
+</div>
+<div>
+<strong>Holdout</strong>
+<p>reserved data</p>
+</div>
+<div>
+<strong>Coverage</strong>
+<p>accepted fraction</p>
+</div>
+<div>
+<strong>Leakage</strong>
+<p>test misuse</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Test your understanding</h3>
+<p>Can adjusting temperature correct the wrong department in all cases?</p>
+<details>
+<summary>Check the commented answer</summary>
+<p>No. A single positive global temperature preserves the order of logits. It changes the distribution, not the ability to distinguish classes.</p>
+</details>
+</div>
+<div class="toolbar">
+<button aria-pressed="false" class="justify-start" data-inema-read-toggle="">Mark as read</button>
+<button aria-pressed="false" class="justify-start" data-inema-doubt-toggle="">I have a question</button>
+</div>
+</section>
+<section class="topic" data-inema-module="4-1" data-inema-topic="modulo-4-1#topico-6" id="topico-6">
+<div class="topic-heading">
+<span class="circle">6</span>
+<h2 class="text-2xl font-bold">Run and interpret the local evaluation</h2>
+</div>
+<div class="inema-prose">
+<h3>What it is</h3>
+<p data-inema-block="modulo-4-1-t6-what">The evaluate command reads JSONL, runs real weights, and writes per-example results—accuracy, baseline, Brier, and ECE. The messages are synthetic, and the report includes an explicit limitation. Inspect each error before thinking about training or changing a threshold.</p>
+<h3>Why learn</h3>
+<p data-inema-block="modulo-4-1-t6-why">Use the report as a starting point for your own set. Add negations, duplicates, very short messages, rare categories, and long texts. If you change questions after seeing the results, keep the previous version and evaluate on new reserved cases.</p>
+</div>
+<div class="example">
+<strong>Applied example</strong>
+<p data-inema-block="modulo-4-1-t6-example">python3 -m practical --device cuda evaluate --output avaliacao.json</p>
+</div>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>JSONL</strong>
+<p>one case per line</p>
+</div>
+<div>
+<strong>Evidence</strong>
+<p>results per case</p>
+</div>
+<div>
+<strong>Error</strong>
+<p>a diagnostic opportunity</p>
+</div>
+<div>
+<strong>New test</strong>
+<p>unseen data</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Test your understanding</h3>
+<p>What conclusion is allowed if all the didactic examples are correct?</p>
+<details>
+<summary>Check the commented answer</summary>
+<p>That the inference path classified that sample correctly, in that environment and scheme. Not that the tool is validated for production.</p>
+</details>
+</div>
+<div class="toolbar">
+<button aria-pressed="false" class="justify-start" data-inema-read-toggle="">Mark as read</button>
+<button aria-pressed="false" class="justify-start" data-inema-doubt-toggle="">I have a question</button>
+</div>
+</section>
+<section class="summary">
+<h2>Module summary</h2>
+<ul>
+<li>Not without caveats. The answer space and the sample change the difficulty; record the difference and avoid attributing everything to the architecture.</li>
+<li>To make the smoke test easy to inspect and to make the baseline explicit. This does not necessarily reproduce the real frequency of an operation.</li>
+<li>No. A single positive global temperature preserves the order of logits. It changes the distribution, not the ability to distinguish classes.</li>
+</ul>
+<p>Select a snippet from the lesson to highlight or annotate. Questions and notes stay in your journey; export the JSON to back up.</p>
+<div class="toolbar">
+<a class="button" href="index.html">← Track map</a>
+<a class="button primary" href="../trilha4/modulo-4-2.html">Next: Specialization and final project →</a>
+</div>
+</section>
+</main>
+<footer>
+<div class="wrap">Laya &amp; Jev · INEMA · Course v2 · Content revised on 21/09/2026<br/>
+<a href="../../fontes.html">Sources and critical analysis</a> · <a href="https://inematds.github.io/laya/guia/">Project guide</a> · <a href="https://github.com/inematds/laya-curso">Course repository</a> · <a href="https://inema.club">INEMA.CLUB</a>
+</div>
+</footer>
+<dialog aria-labelledby="modal-title" id="module-modal">
+<div class="toolbar">
+<strong id="modal-title">Module reading</strong>
+<button onclick="closeModal()">Close</button>
+</div>
+<iframe id="module-frame" title="Complete module content">
+</iframe>
+</dialog>
+<script src="../../assets/core.js">
+</script>
+<script src="../../assets/learn.js?v=1.1.0">
+</script>
+<script>document.addEventListener('DOMContentLoaded',function(){if(window.INEMA)INEMA.init();});</script>
+<nav aria-label="Course language" data-course-languages=""><a href="../../../curso/trilha4/modulo-4-1.html" hreflang="pt-BR" lang="pt-BR">Português</a><a aria-current="page" href="modulo-4-1.html" hreflang="en" lang="en">English</a><a href="../../../es/curso/trilha4/modulo-4-1.html" hreflang="es" lang="es">Español</a></nav><script data-course-language-hash="">document.querySelectorAll('[data-course-languages] a').forEach(function(a){a.addEventListener('click',function(){a.href=a.getAttribute('href').split('#')[0]+location.hash;});});</script></body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "signature": "ac2146d9134f7fadfa850bbe115c7dd424379246c050ecc53168664c086bbf1f",
+  "model": "openai/gpt-5.4-nano",
+  "source_version": "course-i18n-1.0.0",
+  "prompt_sha256": "891f8c2b715056b86559707ed9def326fb2f11b65e2da8c1193f7b1e68c57ea9",
+  "context": "laya-curso"
+}

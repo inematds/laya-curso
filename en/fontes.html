@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+<head>
+<script>(function () {
+  try {
+    var html = document.documentElement;
+    var DEF = { theme: 'inema-dark', font: 'inter', fontScale: 100, lineWidth: 68, leading: 1.7, accent: 'emerald' };
+    function clone(o) { var r = {}; for (var x in o) r[x] = o[x]; return r; }
+    var p = clone(DEF);
+    try {
+      var raw = localStorage.getItem('inema.prefs');
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          for (var k in DEF) if (parsed[k] != null) p[k] = parsed[k];
+        }
+      } else {
+        // fallback ao tema legado do v1
+        var legacy = localStorage.getItem('theme');
+        if (legacy === 'light') p.theme = 'claro';
+        else if (legacy === 'dark') p.theme = 'inema-dark';
+      }
+    } catch (e) { p = clone(DEF); }
+
+    // mapa tema -> (.dark on/off, data-theme, color-scheme)
+    var THEMES = {
+      'inema-dark': { dark: true,  attr: null,        cs: 'dark'  },
+      'claro':      { dark: false, attr: null,        cs: 'light' },
+      'sepia':      { dark: false, attr: 'sepia',     cs: 'light' },
+      'foco':       { dark: null,  attr: 'foco',      cs: null    },  // herda eixo atual
+      'contraste':  { dark: true,  attr: 'contraste', cs: 'dark'  }
+    };
+    var t = THEMES[p.theme] || THEMES['inema-dark'];
+
+    if (t.dark === true) html.classList.add('dark');
+    else if (t.dark === false) html.classList.remove('dark');
+    // 'foco' (null) preserva o que ja houver no atributo class do <html>
+
+    if (t.attr) html.setAttribute('data-theme', t.attr);
+    else html.removeAttribute('data-theme');
+
+    html.style.colorScheme = (t.cs ? t.cs : (html.classList.contains('dark') ? 'dark' : 'light'));
+
+    html.setAttribute('data-font', p.font || 'inter');
+    html.setAttribute('data-accent', p.accent || 'emerald');
+
+    // variaveis de leitura (espelham learn.js / learn.css) ANTES do paint
+    var s = html.style;
+    var scale = (+p.fontScale || 100);
+    s.setProperty('--inema-font-scale', (scale / 100).toString());
+    s.setProperty('font-size', scale + '%');               // :root em %, nunca px
+    s.setProperty('--measure', (+p.lineWidth || 68) + 'ch');
+    s.setProperty('--lh-body', (+p.leading || 1.7).toString());
+    var fam = p.font === 'system'
+      ? 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+      : (p.font === 'leitura'
+        ? '"Atkinson Hyperlegible", "Inter", system-ui, sans-serif'
+        : '"Inter", system-ui, sans-serif');
+    s.setProperty('--font-body', fam);
+
+    var ACC = {
+      emerald: [152, 76, 45], blue: [217, 91, 60], purple: [258, 90, 66],
+      amber: [38, 92, 50], teal: [174, 72, 41], rose: [350, 89, 60]
+    };
+    var a = ACC[p.accent] || ACC.emerald;
+    s.setProperty('--accent-h', a[0] + '');
+    s.setProperty('--accent-s', a[1] + '%');
+    s.setProperty('--accent-l', a[2] + '%');
+    s.setProperty('--accent', 'hsl(' + a[0] + ' ' + a[1] + '% ' + a[2] + '%)');
+  } catch (err) {
+    // qualquer falha => default dark, preserva a marca
+    try { document.documentElement.classList.add('dark'); document.documentElement.style.colorScheme = 'dark'; } catch (e) {}
+  }
+})();
+</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="laya-curso-en" name="inema-course"/>
+<meta content="Practical course on Laya and Jev: structured decisions, local inference, triage in Portuguese, and critical evaluation." name="description"/>
+<title>Sources and critical evaluation | Laya &amp; Jev · INEMA</title>
+<script data-inema-manifest="" type="application/json">{"course": "laya-curso-en", "tracks": [{"n": "1", "title": "Fundamentals", "modules": [{"id": "1-1", "title": "Deciding is not conversing", "topics": 6, "href": "curso/trilha1/modulo-1-1.html"}, {"id": "1-2", "title": "The three primitives", "topics": 6, "href": "curso/trilha1/modulo-1-2.html"}]}, {"n": "2", "title": "Local engine", "modules": [{"id": "2-1", "title": "Installation and first inference", "topics": 6, "href": "curso/trilha2/modulo-2-1.html"}, {"id": "2-2", "title": "Router, context, and processing", "topics": 6, "href": "curso/trilha2/modulo-2-2.html"}]}, {"n": "3", "title": "Practical application", "modules": [{"id": "3-1", "title": "Triage console in Portuguese", "topics": 6, "href": "curso/trilha3/modulo-3-1.html"}, {"id": "3-2", "title": "Integration with agents and processes", "topics": 6, "href": "curso/trilha3/modulo-3-2.html"}]}, {"n": "4", "title": "Quality and evolution", "modules": [{"id": "4-1", "title": "Benchmarks, calibration, and evaluation", "topics": 6, "href": "curso/trilha4/modulo-4-1.html"}, {"id": "4-2", "title": "Specialization and final project", "topics": 6, "href": "curso/trilha4/modulo-4-2.html"}]}]}</script>
+<link href="assets/course.css?v=1.1.0" rel="stylesheet"/>
+<link href="assets/learn.css" rel="stylesheet"/>
+<style>:root{--track:#34d399}</style>
+<link href="https://inematds.github.io/laya-curso/fontes.html" hreflang="pt-BR" rel="alternate"/><link href="https://inematds.github.io/laya-curso/en/fontes.html" hreflang="en" rel="alternate"/><link href="https://inematds.github.io/laya-curso/es/fontes.html" hreflang="es" rel="alternate"/><link href="https://inematds.github.io/laya-curso/fontes.html" hreflang="x-default" rel="alternate"/><link href="https://inematds.github.io/laya-curso/en/fontes.html" rel="canonical"/><style id="course-language-css">[data-course-languages]{position:fixed;bottom:0;left:0;right:0;z-index:60;display:flex;gap:1.25rem;padding:.65rem;justify-content:center;background:#111827;color:#f3f4f6}[data-course-languages] a{color:inherit;font:14px system-ui}[data-course-languages] [aria-current]{font-weight:bold;text-decoration:underline}[data-course-languages] a:focus-visible{outline:2px solid #38bdf8;outline-offset:4px}body{padding-bottom:75px}</style></head>
+<body class="bg-dark-900 text-neutral-100">
+<a class="skip" href="#conteudo">Jump to content</a>
+<nav class="nav bg-dark-900 border-dark-600">
+<div class="nav-inner">
+<a class="brand" href="index.html">◈ LAYA</a>
+<a class="text-sky-400" href="https://inema.club" rel="noopener" target="_blank">INEMA.CLUB</a>
+<a href="https://inema.pro" rel="noopener" target="_blank">PRO</a>
+<div class="nav-tracks">
+<a class="track-link" href="curso/trilha1/index.html">T1 · Fundamentals</a>
+<a class="track-link" href="curso/trilha2/index.html">T2 · Local engine</a>
+<a class="track-link" href="curso/trilha3/index.html">T3 · Practical application</a>
+<a class="track-link" href="curso/trilha4/index.html">T4 · Quality and evolution</a>
+</div>
+<button aria-label="Toggle light and dark" id="theme-toggle" onclick="INEMA.setPref('theme',document.documentElement.classList.contains('dark')?'claro':'inema-dark')">☀ / ☾</button>
+</div>
+</nav>
+<main class="wrap" data-inema-track="" id="conteudo">
+<div class="toolbar">
+<button data-inema-journey-open="">My journey</button>
+<button onclick="INEMA.resume()">Continue where I left off</button>
+<button aria-expanded="false" data-inema-appearance-toggle="#appearance">Appearance and reading</button>
+</div>
+<div data-inema-appearance="" data-open="false" id="appearance">
+<strong>Your reading comfort</strong>
+<div class="toolbar">
+<button data-inema-set-theme="inema-dark">Dark</button>
+<button data-inema-set-theme="claro">Light</button>
+<button data-inema-set-theme="sepia">Sepia</button>
+<button data-inema-set-theme="foco">Focus</button>
+<button data-inema-set-theme="contraste">High contrast</button>
+</div>
+<div class="toolbar">
+<button data-inema-set-fontscale="100">100% font</button>
+<button data-inema-set-fontscale="112">112% font</button>
+<button data-inema-set-fontscale="125">125% font</button>
+<button data-inema-set-leading="1.45">Compact line spacing</button>
+<button data-inema-set-leading="1.7">Comfortable line spacing</button>
+<button data-inema-set-linewidth="60">Short column</button>
+<button data-inema-set-linewidth="75">Wide column</button>
+<button data-inema-set-font="system">System font</button>
+<button data-inema-set-font="leitura">Reading font</button>
+<button data-inema-set-accent="amber">Amber accent</button>
+<button data-inema-set-accent="blue">Blue accent</button>
+</div>
+</div>
+<header class="module-hero">
+<span class="eyebrow">SOURCES · 21 SEP 2026</span>
+<h1>What was analyzed.<br/>What was measured.</h1>
+<p class="lead">The course separates editorial material, authors’ claims, observed code, and a local test.</p>
+</header>
+<section>
+<h2>Provided material</h2>
+<p>Two overview and comparison texts Jev × Laya and three editorial images. The texts set the starting point; the claims were cross-checked against the repository and current cards.</p>
+<p>The video was downloaded and fully transcribed with inemavox and Whisper large-v3: about 26 minutes, 401 segments. The automatic transcription occasionally confuses Laya with Leia and ModernBERT with Modern Bird; the course uses code names.</p>
+<a href="https://www.youtube.com/watch?v=KySbNMsBU70">Original video on YouTube</a>
+</section>
+<section>
+<h2>Technical sources and provenance</h2>
+<ul>
+<li>
+<a href="https://github.com/NandhaKishorM/laya/tree/42626c348753fbb17572a813127df2278a1ec527">Upstream code at the analyzed commit</a>: SDK, Router, sequence assembly, confidence, and presets.</li>
+<li>
+<a href="https://github.com/NandhaKishorM/laya/blob/42626c348753fbb17572a813127df2278a1ec527/BENCHMARKS.md">Author’s benchmark report</a>: consult conditions and limitations; do not treat it as our measurement.</li>
+<li>
+<a href="https://huggingface.co/convaiinnovations/laya-multilingual">Multilingual card</a> and <a href="https://huggingface.co/convaiinnovations/laya-typed-decisions">typed-decisions card</a>: languages, scope, and calibration.</li>
+<li>
+<a href="https://dev.to/nandakishor_m_6cc0adfde9f/i-built-non-autoregressive-decision-models-a-year-ago-then-a-frontier-lab-called-it-a-18me">Creator’s article</a>: architecture and history; some promotional claims are stronger than the current evidence.</li>
+<li>
+<a href="https://github.com/AbdelStark/jev-benchmarks">AbdelStark/jev-benchmarks</a> and <a href="https://github.com/nibzard/decision-model-benchmark">nibzard/decision-model-benchmark</a>: external Jev measurements using their own protocols.</li>
+<li>
+<a href="https://huggingface.co/spaces/convaiinnovations/laya-demo">Official demo</a> and <a href="https://pypi.org/project/laya/">PyPI package</a>: usage references and distribution.</li>
+</ul>
+</section>
+<section>
+<h2>Corrections that guide the lessons</h2>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Simplified claim</th>
+<th>Adopted reading</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>It doesn’t generate text, so it can’t be wrong.</td>
+<td>Structured output avoids free text, but it can still classify incorrectly and be overly confident.</td>
+</tr>
+<tr>
+<td>Multilingual with 135M parameters.</td>
+<td>The video cites an earlier description; the current card indicates 322M total, with mmBERT-base.</td>
+</tr>
+<tr>
+<td>The Router always selects the specialist.</td>
+<td>typed-decisions requires explicit indication or auto_task_detection enabled.</td>
+</tr>
+<tr>
+<td>95% confidence = 95% correct.</td>
+<td>Choice uses normalized entropy in the confidence field; calibration requires data.</td>
+</tr>
+<tr>
+<td>Laya defeats Jev universally.</td>
+<td>Sources use different prompts, samples, and conditions; specialized training is not the same as zero-shot.</td>
+</tr>
+<tr>
+<td>Fine-tuning on the benchmark proves leakage.</td>
+<td>Training on the training split is legitimate; the issue is comparing capabilities without making explicit that preparation. Test leakage requires specific evidence.</td>
+</tr>
+<tr>
+<td>Self-hosted has zero cost.</td>
+<td>No charge from Laya per call, but there are hardware, energy, and operations costs.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section>
+<h2>Observed local execution</h2>
+<p>Multilingual checkpoint, NVIDIA GB10 GPU, four questions per ticket, 16 balanced synthetic messages. Result: 13 correct (81.25%), majority baseline 25%, summed multiclass Brier 0.30835, and ECE top-probability in ten bins 0.17988. The sample is small and does not measure production reliability.</p>
+<p>Errors preserved: buying 20 licenses → billing; time prediction → technical; message sent by mistake → technical. All results still require human review.</p>
+<p>The first measured inference took 1,401 ms, even after model load; subsequent runs varied between about 22 and 124 ms in this trial. These are observations from a single run, with warming up and other tasks on the machine, not a controlled latency benchmark.</p>
+<a href="https://github.com/inematds/laya/blob/main/docs/avaliacao-local.json">Inspect the full JSON report</a>
+</section>
+<section>
+<h2>Materials and resources</h2>
+<div class="cards">
+<figure>
+<img alt="Peça editorial Jev versus Laya" loading="lazy" src="assets/img/comparacao.png"/>
+<figcaption>Provided image: promotional language analyzed in module 1.1.</figcaption>
+</figure>
+<figure>
+<img alt="Peça editorial Laya is here, open source" loading="lazy" src="assets/img/laya-open.png"/>
+<figcaption>Provided image: opening and customization do not eliminate operational cost.</figcaption>
+</figure>
+</div>
+<p>Complete third-party files, video, and transcription are stored in the local research archive, outside the course’s Git. The lessons are authored and point to the original sources. The course did not run Jev or train a new checkpoint.</p>
+</section>
+</main>
+<footer>
+<div class="wrap">Laya &amp; Jev · INEMA · Course v2 · Content revised on 21/09/2026<br/>
+<a href="fontes.html">Sources and critical analysis</a> · <a href="https://inematds.github.io/laya/guia/">Project guide</a> · <a href="https://github.com/inematds/laya-curso">Course repository</a> · <a href="https://inema.club">INEMA.CLUB</a>
+</div>
+</footer>
+<dialog aria-labelledby="modal-title" id="module-modal">
+<div class="toolbar">
+<strong id="modal-title">Module reading</strong>
+<button onclick="closeModal()">Close</button>
+</div>
+<iframe id="module-frame" title="Complete module content">
+</iframe>
+</dialog>
+<script src="assets/core.js">
+</script>
+<script src="assets/learn.js?v=1.1.0">
+</script>
+<script>document.addEventListener('DOMContentLoaded',function(){if(window.INEMA)INEMA.init();});</script>
+<nav aria-label="Course language" data-course-languages=""><a href="../fontes.html" hreflang="pt-BR" lang="pt-BR">Português</a><a aria-current="page" href="fontes.html" hreflang="en" lang="en">English</a><a href="../es/fontes.html" hreflang="es" lang="es">Español</a></nav><script data-course-language-hash="">document.querySelectorAll('[data-course-languages] a').forEach(function(a){a.addEventListener('click',function(){a.href=a.getAttribute('href').split('#')[0]+location.hash;});});</script></body>
+</html>

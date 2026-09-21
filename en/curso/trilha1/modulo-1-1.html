@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+<head>
+<script>(function () {
+  try {
+    var html = document.documentElement;
+    var DEF = { theme: 'inema-dark', font: 'inter', fontScale: 100, lineWidth: 68, leading: 1.7, accent: 'emerald' };
+    function clone(o) { var r = {}; for (var x in o) r[x] = o[x]; return r; }
+    var p = clone(DEF);
+    try {
+      var raw = localStorage.getItem('inema.prefs');
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          for (var k in DEF) if (parsed[k] != null) p[k] = parsed[k];
+        }
+      } else {
+        // fallback ao tema legado do v1
+        var legacy = localStorage.getItem('theme');
+        if (legacy === 'light') p.theme = 'claro';
+        else if (legacy === 'dark') p.theme = 'inema-dark';
+      }
+    } catch (e) { p = clone(DEF); }
+
+    // mapa tema -> (.dark on/off, data-theme, color-scheme)
+    var THEMES = {
+      'inema-dark': { dark: true,  attr: null,        cs: 'dark'  },
+      'claro':      { dark: false, attr: null,        cs: 'light' },
+      'sepia':      { dark: false, attr: 'sepia',     cs: 'light' },
+      'foco':       { dark: null,  attr: 'foco',      cs: null    },  // herda eixo atual
+      'contraste':  { dark: true,  attr: 'contraste', cs: 'dark'  }
+    };
+    var t = THEMES[p.theme] || THEMES['inema-dark'];
+
+    if (t.dark === true) html.classList.add('dark');
+    else if (t.dark === false) html.classList.remove('dark');
+    // 'foco' (null) preserva o que ja houver no atributo class do <html>
+
+    if (t.attr) html.setAttribute('data-theme', t.attr);
+    else html.removeAttribute('data-theme');
+
+    html.style.colorScheme = (t.cs ? t.cs : (html.classList.contains('dark') ? 'dark' : 'light'));
+
+    html.setAttribute('data-font', p.font || 'inter');
+    html.setAttribute('data-accent', p.accent || 'emerald');
+
+    // variaveis de leitura (espelham learn.js / learn.css) ANTES do paint
+    var s = html.style;
+    var scale = (+p.fontScale || 100);
+    s.setProperty('--inema-font-scale', (scale / 100).toString());
+    s.setProperty('font-size', scale + '%');               // :root em %, nunca px
+    s.setProperty('--measure', (+p.lineWidth || 68) + 'ch');
+    s.setProperty('--lh-body', (+p.leading || 1.7).toString());
+    var fam = p.font === 'system'
+      ? 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+      : (p.font === 'leitura'
+        ? '"Atkinson Hyperlegible", "Inter", system-ui, sans-serif'
+        : '"Inter", system-ui, sans-serif');
+    s.setProperty('--font-body', fam);
+
+    var ACC = {
+      emerald: [152, 76, 45], blue: [217, 91, 60], purple: [258, 90, 66],
+      amber: [38, 92, 50], teal: [174, 72, 41], rose: [350, 89, 60]
+    };
+    var a = ACC[p.accent] || ACC.emerald;
+    s.setProperty('--accent-h', a[0] + '');
+    s.setProperty('--accent-s', a[1] + '%');
+    s.setProperty('--accent-l', a[2] + '%');
+    s.setProperty('--accent', 'hsl(' + a[0] + ' ' + a[1] + '% ' + a[2] + '%)');
+  } catch (err) {
+    // qualquer falha => default dark, preserva a marca
+    try { document.documentElement.classList.add('dark'); document.documentElement.style.colorScheme = 'dark'; } catch (e) {}
+  }
+})();
+</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="laya-curso-en" name="inema-course"/>
+<meta content="Practical course on Laya and Jev: structured decisions, local inference, triage in Portuguese, and critical evaluation." name="description"/>
+<title>Deciding isn’t talking | Laya &amp; Jev · INEMA</title>
+<script data-inema-manifest="" type="application/json">{"course": "laya-curso-en", "tracks": [{"n": "1", "title": "Fundamentals", "modules": [{"id": "1-1", "title": "Deciding is not conversing", "topics": 6, "href": "curso/trilha1/modulo-1-1.html"}, {"id": "1-2", "title": "The three primitives", "topics": 6, "href": "curso/trilha1/modulo-1-2.html"}]}, {"n": "2", "title": "Local engine", "modules": [{"id": "2-1", "title": "Installation and first inference", "topics": 6, "href": "curso/trilha2/modulo-2-1.html"}, {"id": "2-2", "title": "Router, context, and processing", "topics": 6, "href": "curso/trilha2/modulo-2-2.html"}]}, {"n": "3", "title": "Practical application", "modules": [{"id": "3-1", "title": "Triage console in Portuguese", "topics": 6, "href": "curso/trilha3/modulo-3-1.html"}, {"id": "3-2", "title": "Integration with agents and processes", "topics": 6, "href": "curso/trilha3/modulo-3-2.html"}]}, {"n": "4", "title": "Quality and evolution", "modules": [{"id": "4-1", "title": "Benchmarks, calibration, and evaluation", "topics": 6, "href": "curso/trilha4/modulo-4-1.html"}, {"id": "4-2", "title": "Specialization and final project", "topics": 6, "href": "curso/trilha4/modulo-4-2.html"}]}]}</script>
+<link href="../../assets/course.css?v=1.1.0" rel="stylesheet"/>
+<link href="../../assets/learn.css" rel="stylesheet"/>
+<style>:root{--track:#34d399}</style>
+<link href="https://inematds.github.io/laya-curso/curso/trilha1/modulo-1-1.html" hreflang="pt-BR" rel="alternate"/><link href="https://inematds.github.io/laya-curso/en/curso/trilha1/modulo-1-1.html" hreflang="en" rel="alternate"/><link href="https://inematds.github.io/laya-curso/es/curso/trilha1/modulo-1-1.html" hreflang="es" rel="alternate"/><link href="https://inematds.github.io/laya-curso/curso/trilha1/modulo-1-1.html" hreflang="x-default" rel="alternate"/><link href="https://inematds.github.io/laya-curso/en/curso/trilha1/modulo-1-1.html" rel="canonical"/><style id="course-language-css">[data-course-languages]{position:fixed;bottom:0;left:0;right:0;z-index:60;display:flex;gap:1.25rem;padding:.65rem;justify-content:center;background:#111827;color:#f3f4f6}[data-course-languages] a{color:inherit;font:14px system-ui}[data-course-languages] [aria-current]{font-weight:bold;text-decoration:underline}[data-course-languages] a:focus-visible{outline:2px solid #38bdf8;outline-offset:4px}body{padding-bottom:75px}</style></head>
+<body class="bg-dark-900 text-neutral-100">
+<a class="skip" href="#conteudo">Jump to content</a>
+<nav class="nav bg-dark-900 border-dark-600">
+<div class="nav-inner">
+<a class="brand" href="../../index.html">◈ LAYA</a>
+<a class="text-sky-400" href="https://inema.club" rel="noopener" target="_blank">INEMA.CLUB</a>
+<a href="https://inema.pro" rel="noopener" target="_blank">PRO</a>
+<div class="nav-tracks">
+<a class="track-link active" href="../../curso/trilha1/index.html">T1 · Fundamentals</a>
+<a class="track-link" href="../../curso/trilha2/index.html">T2 · Local engine</a>
+<a class="track-link" href="../../curso/trilha3/index.html">T3 · Practical application</a>
+<a class="track-link" href="../../curso/trilha4/index.html">T4 · Quality and evolution</a>
+</div>
+<button aria-label="Toggle light and dark" id="theme-toggle" onclick="INEMA.setPref('theme',document.documentElement.classList.contains('dark')?'claro':'inema-dark')">☀ / ☾</button>
+</div>
+</nav>
+<main class="wrap" data-inema-track="1" id="conteudo">
+<div class="toolbar">
+<button data-inema-journey-open="">My journey</button>
+<button onclick="INEMA.resume()">Continue where I left off</button>
+<button aria-expanded="false" data-inema-appearance-toggle="#appearance">Appearance and reading</button>
+</div>
+<div data-inema-appearance="" data-open="false" id="appearance">
+<strong>Your reading comfort</strong>
+<div class="toolbar">
+<button data-inema-set-theme="inema-dark">Dark</button>
+<button data-inema-set-theme="claro">Light</button>
+<button data-inema-set-theme="sepia">Sepia</button>
+<button data-inema-set-theme="foco">Focus</button>
+<button data-inema-set-theme="contraste">High contrast</button>
+</div>
+<div class="toolbar">
+<button data-inema-set-fontscale="100">100% font</button>
+<button data-inema-set-fontscale="112">112% font</button>
+<button data-inema-set-fontscale="125">125% font</button>
+<button data-inema-set-leading="1.45">Compact line spacing</button>
+<button data-inema-set-leading="1.7">Comfortable line spacing</button>
+<button data-inema-set-linewidth="60">Short column</button>
+<button data-inema-set-linewidth="75">Wide column</button>
+<button data-inema-set-font="system">System font</button>
+<button data-inema-set-font="leitura">Reading font</button>
+<button data-inema-set-accent="amber">Amber accent</button>
+<button data-inema-set-accent="blue">Blue accent</button>
+</div>
+</div>
+<div class="breadcrumb">
+<a href="../../index.html">Start</a> / <a href="index.html">Track 1</a> / 1.1</div>
+<header class="module-hero">
+<span class="eyebrow">MODULE 1.1</span>
+<h1>Deciding is not conversing</h1>
+<p class="lead">Choose the tool by output type.</p>
+<div class="stats">
+<span>6 topics</span>
+<span>35–50 min with practice</span>
+<span>Fundamentals</span>
+<span>Commented exercises</span>
+</div>
+</header>
+<div class="diagram">
+<svg aria-label="Decision state for review" class="w-full h-auto" font-family="Inter,system-ui,sans-serif" role="img" viewbox="0 0 760 185">
+<defs>
+<pattern height="20" id="1-1-grid" patternunits="userSpaceOnUse" width="20">
+<circle cx="1" cy="1" fill="#64748b" opacity=".25" r="1"></circle>
+</pattern>
+<filter id="1-1-glow">
+<fegaussianblur stddeviation="1.8"></fegaussianblur>
+</filter>
+</defs>
+<rect fill="url(#1-1-grid)" height="185" width="760"></rect>
+<path d="M240 92h30m220 0h30" stroke="#38bdf8" stroke-width="2"></path>
+<g>
+<rect fill="#111827" height="88" rx="12" stroke="#34d399" stroke-width="2" width="220" x="20" y="48"></rect>
+<text fill="#e5e7eb" font-size="18" font-weight="600" text-anchor="middle" x="130" y="98">State</text>
+</g>
+<g>
+<rect fill="#111827" height="88" rx="12" stroke="#38bdf8" stroke-width="2" width="220" x="270" y="48"></rect>
+<text fill="#e5e7eb" font-size="18" font-weight="600" text-anchor="middle" x="380" y="98">Decision</text>
+</g>
+<g>
+<rect fill="#111827" height="88" rx="12" stroke="#34d399" stroke-width="2" width="220" x="520" y="48"></rect>
+<text fill="#e5e7eb" font-size="18" font-weight="600" text-anchor="middle" x="630" y="98">Review</text>
+</g>
+<text fill="#cbd5e1" font-size="12" text-anchor="middle" x="380" y="166">LAYA / INEMA · conceptual flow</text>
+</svg>
+</div>
+<div aria-label="Progress" class="meter" data-inema-meter="modulo:1-1">
+<span>Your progress</span> <span data-inema-meter-frac="">
+</span>
+<div class="inema-bar">
+<div class="inema-bar__fill" data-inema-meter-fill="">
+</div>
+</div>
+</div>
+<div aria-label="Progress" class="meter" data-inema-meter="curso">
+<span>Your progress</span> <span data-inema-meter-frac="">
+</span>
+<div class="inema-bar">
+<div class="inema-bar__fill" data-inema-meter-fill="">
+</div>
+</div>
+</div>
+<ol class="toc">
+<li>
+<a href="#topico-1">A decision has a space of answers</a>
+</li>
+<li>
+<a href="#topico-2">System 1 and System 2</a>
+</li>
+<li>
+<a href="#topico-3">The meaning of not autoregressive</a>
+</li>
+<li>
+<a href="#topico-4">Jev and Laya in the same drawing</a>
+</li>
+<li>
+<a href="#topico-5">The promise of images and the evidence</a>
+</li>
+<li>
+<a href="#topico-6">Draw the first use case</a>
+</li>
+</ol>
+<section class="topic" data-inema-module="1-1" data-inema-topic="modulo-1-1#topico-1" id="topico-1">
+<div class="topic-heading">
+<span class="circle">1</span>
+<h2 class="text-2xl font-bold">A decision has a space of answers</h2>
+</div>
+<div class="inema-prose">
+<h3>What it is</h3>
+<p data-inema-block="modulo-1-1-t1-what">A decision engine receives a state and chooses within a defined set. In a ticket, the state can be the subject and message; the output can be finance, support, sales, or others. The work begins by defining what those categories mean and who will receive each case. The prediction does not include a long explanation or perform the customer support session.</p>
+<h3>Why learn</h3>
+<p data-inema-block="modulo-1-1-t1-why">Overlapping categories make the label ambiguous even before involving AI. Define a rule for requests that mix billing and technical failure. The team needs to agree on the expected outcome in order to measure correctness afterward.</p>
+</div>
+<div class="example">
+<strong>Applied example</strong>
+<p data-inema-block="modulo-1-1-t1-example">The customer requests a refund for a duplicated charge: the finance department is one recommendation; returning money is another operation.</p>
+</div>
+<div class="comparison">
+<div class="yes bg-emerald-900/20">
+<h3>✓ Apply with criteria</h3>
+<p>It depends on the operational rule. In this lab, fixing billing belongs to billing; negotiating a new purchase belongs to sales. Document the priority in mixed cases.</p>
+</div>
+<div class="no bg-red-900/20">
+<h3>✗ Avoid the automatic conclusion</h3>
+<p>A discount request and a billing complaint should go where?</p>
+<p>Don’t accept an answer just by the field name or by the appearance of precision. Check the definition and the context of this section.</p>
+</div>
+</div>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>State</strong>
+<p>observed information</p>
+</div>
+<div>
+<strong>Schema</strong>
+<p>question contract</p>
+</div>
+<div>
+<strong>Label</strong>
+<p>exit option</p>
+</div>
+<div>
+<strong>Action</strong>
+<p>effect on the system</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Test your understanding</h3>
+<p>A discount request and a billing complaint should go where?</p>
+<details>
+<summary>Check the commented answer</summary>
+<p>It depends on the operational rule. In this lab, fixing billing belongs to billing; negotiating a new purchase belongs to sales. Document the priority in mixed cases.</p>
+</details>
+</div>
+<div class="toolbar">
+<button aria-pressed="false" class="justify-start" data-inema-read-toggle="">Mark as read</button>
+<button aria-pressed="false" class="justify-start" data-inema-doubt-toggle="">I have a question</button>
+</div>
+</section>
+<section class="topic" data-inema-module="1-1" data-inema-topic="modulo-1-1#topico-2" id="topico-2">
+<div class="topic-heading">
+<span class="circle">2</span>
+<h2 class="text-2xl font-bold">System 1 and System 2</h2>
+</div>
+<div class="inema-prose">
+<h3>What it is</h3>
+<p data-inema-block="modulo-1-1-t2-what">System 1 is an analogy for fast, bounded decisions; System 2 represents tasks that require elaboration, planning, or generation. They are not diagnoses about the model’s consciousness. A classifier can choose the support department while a generative model drafts a response using facts that have already been checked.</p>
+<h3>Why learn</h3>
+<p data-inema-block="modulo-1-1-t2-why">Separating steps lets you measure the cost and error of each part. If classification fails, you know which part to investigate. A composed system can also skip the model when a deterministic rule already resolves the case with confidence.</p>
+</div>
+<div class="example">
+<strong>Applied example</strong>
+<p data-inema-block="modulo-1-1-t2-example">Received event → sector classification → agent review → response drafting.</p>
+</div>
+<ol class="timeline">
+<li>
+<span class="circle">1</span>
+<div>
+<strong>Observe</strong>
+<p>Received event → sector classification → agent review → response drafting.</p>
+</div>
+</li>
+<li>
+<span class="circle">2</span>
+<div>
+<strong>Define</strong>
+<p>System 1 is an analogy for quick, bounded decisions; System 2 represents tasks that require elaboration, planning, or generation.</p>
+</div>
+</li>
+<li>
+<span class="circle">3</span>
+<div>
+<strong>Check</strong>
+<p>No. Use only the necessary steps. A ticket already identified by a form can be routed by rule; others may require review without generating text.</p>
+</div>
+</li>
+</ol>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Reflex</strong>
+<p>narrow task</p>
+</div>
+<div>
+<strong>Deliberation</strong>
+<p>extensive analysis</p>
+</div>
+<div>
+<strong>Composition</strong>
+<p>distinct steps</p>
+</div>
+<div>
+<strong>Rule</strong>
+<p>deterministic decision</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Test your understanding</h3>
+<p>Does every ticket have to go through two models?</p>
+<details>
+<summary>Check the commented answer</summary>
+<p>No. Use only the necessary steps. A ticket already identified by a form can be routed by rule; others may require review without generating text.</p>
+</details>
+</div>
+<div class="toolbar">
+<button aria-pressed="false" class="justify-start" data-inema-read-toggle="">Mark as read</button>
+<button aria-pressed="false" class="justify-start" data-inema-doubt-toggle="">I have a question</button>
+</div>
+</section>
+<section class="topic" data-inema-module="1-1" data-inema-topic="modulo-1-1#topico-3" id="topico-3">
+<div class="topic-heading">
+<span class="circle">3</span>
+<h2 class="text-2xl font-bold">The meaning of not autoregressive</h2>
+</div>
+<div class="inema-prose">
+<h3>What it is</h3>
+<p data-inema-block="modulo-1-1-t3-what">In Laya inference, an encoder processes the sequence and computes values for the options. It doesn’t write the response token by token. The SDK converts those values into structured fields. Multiple questions about the same state are organized into a batch for a single model call.</p>
+<h3>Why learn</h3>
+<p data-inema-block="modulo-1-1-t3-why">A forward pass doesn’t mean constant cost. More questions, more tokens, and more options increase work and memory. The absence of free text reduces formatting issues, but it still allows classification errors and poorly calibrated distributions.</p>
+</div>
+<div class="example">
+<strong>Applied example</strong>
+<p data-inema-block="modulo-1-1-t3-example">Four questions generate four sequences in the batch: department, urgency, cancellation, and refund.</p>
+</div>
+<aside class="tip bg-primary/10 border-primary/30">
+<h3>Practical tip</h3>
+<p>You can pick the wrong category with a lot of confidence. The output format and the truth of the decision are different properties.</p>
+</aside>
+<div class="codebox">
+<h3>Example of reasoning</h3>
+<pre>
+<code>estado = {"message": "Cobrança duplicada"}
+# Model: recommends a department
+# Policy: requires human review
+# Executor: out of scope for the laboratory</code>
+</pre>
+</div>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Encoder</strong>
+<p>represents input</p>
+</div>
+<div>
+<strong>Batch</strong>
+<p>multiple sequences</p>
+</div>
+<div>
+<strong>Logit</strong>
+<p>value before softmax</p>
+</div>
+<div>
+<strong>Inference</strong>
+<p>model calculation</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Test your understanding</h3>
+<p>If it doesn’t generate sentences, the model can’t be wrong?</p>
+<details>
+<summary>Check the commented answer</summary>
+<p>You can pick the wrong category with a lot of confidence. The output format and the truth of the decision are different properties.</p>
+</details>
+</div>
+<div class="toolbar">
+<button aria-pressed="false" class="justify-start" data-inema-read-toggle="">Mark as read</button>
+<button aria-pressed="false" class="justify-start" data-inema-doubt-toggle="">I have a question</button>
+</div>
+</section>
+<section class="topic" data-inema-module="1-1" data-inema-topic="modulo-1-1#topico-4" id="topico-4">
+<div class="topic-heading">
+<span class="circle">4</span>
+<h2 class="text-2xl font-bold">Jev and Laya in the same drawing</h2>
+</div>
+<div class="inema-prose">
+<h3>What it is</h3>
+<p data-inema-block="modulo-1-1-t4-what">Jev appears in sources as a decision service accessed via API. Laya provides code and checkpoints for running your own. The useful comparison considers infrastructure control, data that leaves the machine, maintenance effort, and quality on the intended task. An isolated benchmark doesn’t determine the whole architecture.</p>
+<h3>Why learn</h3>
+<p data-inema-block="modulo-1-1-t4-why">Hosting a model involves installation time, memory, energy, monitoring, and updates. Not paying per call to the provider doesn’t remove those costs. Choosing an API may reduce some of that work, but it creates dependency on availability, the contract, and network latency.</p>
+</div>
+<div class="example">
+<strong>Applied example</strong>
+<p data-inema-block="modulo-1-1-t4-example">A team with local infrastructure can evaluate Laya; another can prioritize a managed service. Both need labeled examples.</p>
+</div>
+<div class="comparison">
+<div class="yes bg-emerald-900/20">
+<h3>✓ Apply with criteria</h3>
+<p>The weights and code are open under the indicated licenses. Operations still have hardware and maintenance costs, even without charging per Laya call.</p>
+</div>
+<div class="no bg-red-900/20">
+<h3>✗ Avoid the automatic conclusion</h3>
+<p>Is it correct to call Laya free in operations?</p>
+<p>Don’t accept an answer just by the field name or by the appearance of precision. Check the definition and the context of this section.</p>
+</div>
+</div>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Self-hosted</strong>
+<p>own execution</p>
+</div>
+<div>
+<strong>API</strong>
+<p>remote service</p>
+</div>
+<div>
+<strong>Total cost</strong>
+<p>complete operation</p>
+</div>
+<div>
+<strong>Dependency</strong>
+<p>required service</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Test your understanding</h3>
+<p>Is it correct to call Laya free in operations?</p>
+<details>
+<summary>Check the commented answer</summary>
+<p>The weights and code are open under the indicated licenses. Operations still have hardware and maintenance costs, even without charging per Laya call.</p>
+</details>
+</div>
+<div class="toolbar">
+<button aria-pressed="false" class="justify-start" data-inema-read-toggle="">Mark as read</button>
+<button aria-pressed="false" class="justify-start" data-inema-doubt-toggle="">I have a question</button>
+</div>
+</section>
+<section class="topic" data-inema-module="1-1" data-inema-topic="modulo-1-1#topico-5" id="topico-5">
+<div class="topic-heading">
+<span class="circle">5</span>
+<h2 class="text-2xl font-bold">The promise of the images and the evidence</h2>
+</div>
+<div class="inema-prose">
+<h3>What it is</h3>
+<p data-inema-block="modulo-1-1-t5-what">The provided images present a competition narrative, with phrases like the end of the LLMs and an alternative that’s even faster. They are promotional visual pieces. To learn from them, turn each promise into a testable hypothesis: better at which task, with which inputs, and on which machine?</p>
+<h3>Why learn</h3>
+<p data-inema-block="modulo-1-1-t5-why">In the course, the image is used as an editorial reference. The technical conclusions come from the code, checkpoint cards, reports, and local execution. This habit prevents turning a catchy title into a production requirement without evidence.</p>
+</div>
+<div class="example">
+<strong>Applied example</strong>
+<p data-inema-block="modulo-1-1-t5-example">Testable hypothesis: in my ticket set, local triage reduces forwarding time without increasing critical errors.</p>
+</div>
+<aside class="tip bg-primary/10 border-primary/30">
+<h3>Practical tip</h3>
+<p>Ask which solution satisfies your maximum error, latency, and cost for your workflow, using the same sample and recording the test conditions.</p>
+</aside>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Promotion</strong>
+<p>gets your attention</p>
+</div>
+<div>
+<strong>Hypothesis</strong>
+<p>testable claim</p>
+</div>
+<div>
+<strong>Evidence</strong>
+<p>recorded result</p>
+</div>
+<div>
+<strong>Scope</strong>
+<p>condition of the conclusion</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Test your understanding</h3>
+<p>How do you replace the phrase “Laya won Jev” with a useful question?</p>
+<details>
+<summary>Check the commented answer</summary>
+<p>Ask which solution satisfies your maximum error, latency, and cost for your workflow, using the same sample and recording the test conditions.</p>
+</details>
+</div>
+<div class="toolbar">
+<button aria-pressed="false" class="justify-start" data-inema-read-toggle="">Mark as read</button>
+<button aria-pressed="false" class="justify-start" data-inema-doubt-toggle="">I have a question</button>
+</div>
+</section>
+<section class="topic" data-inema-module="1-1" data-inema-topic="modulo-1-1#topico-6" id="topico-6">
+<div class="topic-heading">
+<span class="circle">6</span>
+<h2 class="text-2xl font-bold">Draw the first use case</h2>
+</div>
+<div class="inema-prose">
+<h3>What it is</h3>
+<p data-inema-block="modulo-1-1-t6-what">This course project is a triage console in Portuguese. It takes a message and a subject, returns four signals, and recommends human review. This scope is small enough to investigate errors and close to a real routine. It does not involve payment credentials, email sending, or autonomous execution.</p>
+<h3>Why learn</h3>
+<p data-inema-block="modulo-1-1-t6-why">Before installing, write the minimum input, the categories, the meaning of urgency, and who decides the final routing. Make a table of good examples, ambiguous ones, and those outside the domain. These cases will become tests and reveal doubts in the scheme.</p>
+</div>
+<div class="example">
+<strong>Applied example</strong>
+<p data-inema-block="modulo-1-1-t6-example">Input: duplicate billing. Output: billing, estimated urgency, cancellation and refund signals. Final responsible person: agent.</p>
+</div>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Minimal input</strong>
+<p>no excess</p>
+</div>
+<div>
+<strong>Responsible</strong>
+<p>confirms the decision</p>
+</div>
+<div>
+<strong>Outside the domain</strong>
+<p>residual case</p>
+</div>
+<div>
+<strong>Criterion</strong>
+<p>expected result</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Test your understanding</h3>
+<p>What is the minimum deliverable for this module?</p>
+<details>
+<summary>Check the commented answer</summary>
+<p>A triage contract with four departments, a definition of urgency, and at least one ambiguous example with a documented tie-break rule.</p>
+</details>
+</div>
+<div class="toolbar">
+<button aria-pressed="false" class="justify-start" data-inema-read-toggle="">Mark as read</button>
+<button aria-pressed="false" class="justify-start" data-inema-doubt-toggle="">I have a question</button>
+</div>
+</section>
+<section class="summary">
+<h2>Module summary</h2>
+<ul>
+<li>It depends on the operational rule. In this lab, fixing billing belongs to billing; negotiating a new purchase belongs to sales. Document the priority in mixed cases.</li>
+<li>You can pick the wrong category with a lot of confidence. The output format and the truth of the decision are different properties.</li>
+<li>Ask which solution satisfies your maximum error, latency, and cost for your workflow, using the same sample and recording the test conditions.</li>
+</ul>
+<p>Select a snippet from the lesson to highlight or annotate. Questions and notes stay in your journey; export the JSON to back up.</p>
+<div class="toolbar">
+<a class="button" href="index.html">← Learning track map</a>
+<a class="button primary" href="../trilha1/modulo-1-2.html">Next: The three primitives →</a>
+</div>
+</section>
+</main>
+<footer>
+<div class="wrap">Laya &amp; Jev · INEMA · Course v2 · Content revised on 21/09/2026<br/>
+<a href="../../fontes.html">Sources and critical analysis</a> · <a href="https://inematds.github.io/laya/guia/">Project guide</a> · <a href="https://github.com/inematds/laya-curso">Course repository</a> · <a href="https://inema.club">INEMA.CLUB</a>
+</div>
+</footer>
+<dialog aria-labelledby="modal-title" id="module-modal">
+<div class="toolbar">
+<strong id="modal-title">Module reading</strong>
+<button onclick="closeModal()">Close</button>
+</div>
+<iframe id="module-frame" title="Complete module content">
+</iframe>
+</dialog>
+<script src="../../assets/core.js">
+</script>
+<script src="../../assets/learn.js?v=1.1.0">
+</script>
+<script>document.addEventListener('DOMContentLoaded',function(){if(window.INEMA)INEMA.init();});</script>
+<nav aria-label="Course language" data-course-languages=""><a href="../../../curso/trilha1/modulo-1-1.html" hreflang="pt-BR" lang="pt-BR">Português</a><a aria-current="page" href="modulo-1-1.html" hreflang="en" lang="en">English</a><a href="../../../es/curso/trilha1/modulo-1-1.html" hreflang="es" lang="es">Español</a></nav><script data-course-language-hash="">document.querySelectorAll('[data-course-languages] a').forEach(function(a){a.addEventListener('click',function(){a.href=a.getAttribute('href').split('#')[0]+location.hash;});});</script></body>
+</html>

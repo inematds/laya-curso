@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+<head>
+<script>(function () {
+  try {
+    var html = document.documentElement;
+    var DEF = { theme: 'inema-dark', font: 'inter', fontScale: 100, lineWidth: 68, leading: 1.7, accent: 'emerald' };
+    function clone(o) { var r = {}; for (var x in o) r[x] = o[x]; return r; }
+    var p = clone(DEF);
+    try {
+      var raw = localStorage.getItem('inema.prefs');
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          for (var k in DEF) if (parsed[k] != null) p[k] = parsed[k];
+        }
+      } else {
+        // fallback ao tema legado do v1
+        var legacy = localStorage.getItem('theme');
+        if (legacy === 'light') p.theme = 'claro';
+        else if (legacy === 'dark') p.theme = 'inema-dark';
+      }
+    } catch (e) { p = clone(DEF); }
+
+    // mapa tema -> (.dark on/off, data-theme, color-scheme)
+    var THEMES = {
+      'inema-dark': { dark: true,  attr: null,        cs: 'dark'  },
+      'claro':      { dark: false, attr: null,        cs: 'light' },
+      'sepia':      { dark: false, attr: 'sepia',     cs: 'light' },
+      'foco':       { dark: null,  attr: 'foco',      cs: null    },  // herda eixo atual
+      'contraste':  { dark: true,  attr: 'contraste', cs: 'dark'  }
+    };
+    var t = THEMES[p.theme] || THEMES['inema-dark'];
+
+    if (t.dark === true) html.classList.add('dark');
+    else if (t.dark === false) html.classList.remove('dark');
+    // 'foco' (null) preserva o que ja houver no atributo class do <html>
+
+    if (t.attr) html.setAttribute('data-theme', t.attr);
+    else html.removeAttribute('data-theme');
+
+    html.style.colorScheme = (t.cs ? t.cs : (html.classList.contains('dark') ? 'dark' : 'light'));
+
+    html.setAttribute('data-font', p.font || 'inter');
+    html.setAttribute('data-accent', p.accent || 'emerald');
+
+    // variaveis de leitura (espelham learn.js / learn.css) ANTES do paint
+    var s = html.style;
+    var scale = (+p.fontScale || 100);
+    s.setProperty('--inema-font-scale', (scale / 100).toString());
+    s.setProperty('font-size', scale + '%');               // :root em %, nunca px
+    s.setProperty('--measure', (+p.lineWidth || 68) + 'ch');
+    s.setProperty('--lh-body', (+p.leading || 1.7).toString());
+    var fam = p.font === 'system'
+      ? 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+      : (p.font === 'leitura'
+        ? '"Atkinson Hyperlegible", "Inter", system-ui, sans-serif'
+        : '"Inter", system-ui, sans-serif');
+    s.setProperty('--font-body', fam);
+
+    var ACC = {
+      emerald: [152, 76, 45], blue: [217, 91, 60], purple: [258, 90, 66],
+      amber: [38, 92, 50], teal: [174, 72, 41], rose: [350, 89, 60]
+    };
+    var a = ACC[p.accent] || ACC.emerald;
+    s.setProperty('--accent-h', a[0] + '');
+    s.setProperty('--accent-s', a[1] + '%');
+    s.setProperty('--accent-l', a[2] + '%');
+    s.setProperty('--accent', 'hsl(' + a[0] + ' ' + a[1] + '% ' + a[2] + '%)');
+  } catch (err) {
+    // qualquer falha => default dark, preserva a marca
+    try { document.documentElement.classList.add('dark'); document.documentElement.style.colorScheme = 'dark'; } catch (e) {}
+  }
+})();
+</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="laya-curso-en" name="inema-course"/>
+<meta content="Practical course on Laya and Jev: structured decisions, local inference, triage in Portuguese, and critical evaluation." name="description"/>
+<title>Installation and first inference | Laya &amp; Jev · INEMA</title>
+<script data-inema-manifest="" type="application/json">{"course": "laya-curso-en", "tracks": [{"n": "1", "title": "Fundamentals", "modules": [{"id": "1-1", "title": "Deciding is not conversing", "topics": 6, "href": "curso/trilha1/modulo-1-1.html"}, {"id": "1-2", "title": "The three primitives", "topics": 6, "href": "curso/trilha1/modulo-1-2.html"}]}, {"n": "2", "title": "Local engine", "modules": [{"id": "2-1", "title": "Installation and first inference", "topics": 6, "href": "curso/trilha2/modulo-2-1.html"}, {"id": "2-2", "title": "Router, context, and processing", "topics": 6, "href": "curso/trilha2/modulo-2-2.html"}]}, {"n": "3", "title": "Practical application", "modules": [{"id": "3-1", "title": "Triage console in Portuguese", "topics": 6, "href": "curso/trilha3/modulo-3-1.html"}, {"id": "3-2", "title": "Integration with agents and processes", "topics": 6, "href": "curso/trilha3/modulo-3-2.html"}]}, {"n": "4", "title": "Quality and evolution", "modules": [{"id": "4-1", "title": "Benchmarks, calibration, and evaluation", "topics": 6, "href": "curso/trilha4/modulo-4-1.html"}, {"id": "4-2", "title": "Specialization and final project", "topics": 6, "href": "curso/trilha4/modulo-4-2.html"}]}]}</script>
+<link href="../../assets/course.css?v=1.1.0" rel="stylesheet"/>
+<link href="../../assets/learn.css" rel="stylesheet"/>
+<style>:root{--track:#60a5fa}</style>
+<link href="https://inematds.github.io/laya-curso/curso/trilha2/modulo-2-1.html" hreflang="pt-BR" rel="alternate"/><link href="https://inematds.github.io/laya-curso/en/curso/trilha2/modulo-2-1.html" hreflang="en" rel="alternate"/><link href="https://inematds.github.io/laya-curso/es/curso/trilha2/modulo-2-1.html" hreflang="es" rel="alternate"/><link href="https://inematds.github.io/laya-curso/curso/trilha2/modulo-2-1.html" hreflang="x-default" rel="alternate"/><link href="https://inematds.github.io/laya-curso/en/curso/trilha2/modulo-2-1.html" rel="canonical"/><style id="course-language-css">[data-course-languages]{position:fixed;bottom:0;left:0;right:0;z-index:60;display:flex;gap:1.25rem;padding:.65rem;justify-content:center;background:#111827;color:#f3f4f6}[data-course-languages] a{color:inherit;font:14px system-ui}[data-course-languages] [aria-current]{font-weight:bold;text-decoration:underline}[data-course-languages] a:focus-visible{outline:2px solid #38bdf8;outline-offset:4px}body{padding-bottom:75px}</style></head>
+<body class="bg-dark-900 text-neutral-100">
+<a class="skip" href="#conteudo">Jump to content</a>
+<nav class="nav bg-dark-900 border-dark-600">
+<div class="nav-inner">
+<a class="brand" href="../../index.html">◈ LAYA</a>
+<a class="text-sky-400" href="https://inema.club" rel="noopener" target="_blank">INEMA.CLUB</a>
+<a href="https://inema.pro" rel="noopener" target="_blank">PRO</a>
+<div class="nav-tracks">
+<a class="track-link" href="../../curso/trilha1/index.html">T1 · Fundamentals</a>
+<a class="track-link active" href="../../curso/trilha2/index.html">T2 · Local engine</a>
+<a class="track-link" href="../../curso/trilha3/index.html">T3 · Practical application</a>
+<a class="track-link" href="../../curso/trilha4/index.html">T4 · Quality and evolution</a>
+</div>
+<button aria-label="Toggle light and dark" id="theme-toggle" onclick="INEMA.setPref('theme',document.documentElement.classList.contains('dark')?'claro':'inema-dark')">☀ / ☾</button>
+</div>
+</nav>
+<main class="wrap" data-inema-track="2" id="conteudo">
+<div class="toolbar">
+<button data-inema-journey-open="">My journey</button>
+<button onclick="INEMA.resume()">Continue where I left off</button>
+<button aria-expanded="false" data-inema-appearance-toggle="#appearance">Appearance and reading</button>
+</div>
+<div data-inema-appearance="" data-open="false" id="appearance">
+<strong>Your reading comfort</strong>
+<div class="toolbar">
+<button data-inema-set-theme="inema-dark">Dark</button>
+<button data-inema-set-theme="claro">Light</button>
+<button data-inema-set-theme="sepia">Sepia</button>
+<button data-inema-set-theme="foco">Focus</button>
+<button data-inema-set-theme="contraste">High contrast</button>
+</div>
+<div class="toolbar">
+<button data-inema-set-fontscale="100">100% font</button>
+<button data-inema-set-fontscale="112">112% font</button>
+<button data-inema-set-fontscale="125">125% font</button>
+<button data-inema-set-leading="1.45">Compact line spacing</button>
+<button data-inema-set-leading="1.7">Comfortable line spacing</button>
+<button data-inema-set-linewidth="60">Short column</button>
+<button data-inema-set-linewidth="75">Wide column</button>
+<button data-inema-set-font="system">System font</button>
+<button data-inema-set-font="leitura">Reading font</button>
+<button data-inema-set-accent="amber">Amber accent</button>
+<button data-inema-set-accent="blue">Blue accent</button>
+</div>
+</div>
+<div class="breadcrumb">
+<a href="../../index.html">Start</a> / <a href="index.html">Track 2</a> / 2.1</div>
+<header class="module-hero">
+<span class="eyebrow">MODULE 2.1</span>
+<h1>Installation and first inference</h1>
+<p class="lead">Run real weights on your machine.</p>
+<div class="stats">
+<span>6 topics</span>
+<span>35–50 min with hands-on practice</span>
+<span>Local motor</span>
+<span>Commented exercises</span>
+</div>
+</header>
+<div class="diagram">
+<svg aria-label="Resident Model code + weights for inference" class="w-full h-auto" font-family="Inter,system-ui,sans-serif" role="img" viewbox="0 0 760 185">
+<defs>
+<pattern height="20" id="2-1-grid" patternunits="userSpaceOnUse" width="20">
+<circle cx="1" cy="1" fill="#64748b" opacity=".25" r="1"></circle>
+</pattern>
+<filter id="2-1-glow">
+<fegaussianblur stddeviation="1.8"></fegaussianblur>
+</filter>
+</defs>
+<rect fill="url(#2-1-grid)" height="185" width="760"></rect>
+<path d="M240 92h30m220 0h30" stroke="#38bdf8" stroke-width="2"></path>
+<g>
+<rect fill="#111827" height="88" rx="12" stroke="#60a5fa" stroke-width="2" width="220" x="20" y="48"></rect>
+<text fill="#e5e7eb" font-size="18" font-weight="600" text-anchor="middle" x="130" y="98">Code + weights</text>
+</g>
+<g>
+<rect fill="#111827" height="88" rx="12" stroke="#38bdf8" stroke-width="2" width="220" x="270" y="48"></rect>
+<text fill="#e5e7eb" font-size="18" font-weight="600" text-anchor="middle" x="380" y="98">Resident model</text>
+</g>
+<g>
+<rect fill="#111827" height="88" rx="12" stroke="#60a5fa" stroke-width="2" width="220" x="520" y="48"></rect>
+<text fill="#e5e7eb" font-size="18" font-weight="600" text-anchor="middle" x="630" y="98">Inference</text>
+</g>
+<text fill="#cbd5e1" font-size="12" text-anchor="middle" x="380" y="166">LAYA / INEMA · conceptual flow</text>
+</svg>
+</div>
+<div aria-label="Progress" class="meter" data-inema-meter="modulo:2-1">
+<span>Your progress</span> <span data-inema-meter-frac="">
+</span>
+<div class="inema-bar">
+<div class="inema-bar__fill" data-inema-meter-fill="">
+</div>
+</div>
+</div>
+<div aria-label="Progress" class="meter" data-inema-meter="curso">
+<span>Your progress</span> <span data-inema-meter-frac="">
+</span>
+<div class="inema-bar">
+<div class="inema-bar__fill" data-inema-meter-fill="">
+</div>
+</div>
+</div>
+<ol class="toc">
+<li>
+<a href="#topico-1">Code, environment, and weights</a>
+</li>
+<li>
+<a href="#topico-2">Choose CPU or GPU deliberately</a>
+</li>
+<li>
+<a href="#topico-3">Download only the necessary model</a>
+</li>
+<li>
+<a href="#topico-4">First triage via the terminal</a>
+</li>
+<li>
+<a href="#topico-5">Check versions and provenance</a>
+</li>
+<li>
+<a href="#topico-6">Fix failures without rebuilding everything</a>
+</li>
+</ol>
+<section class="topic" data-inema-module="2-1" data-inema-topic="modulo-2-1#topico-1" id="topico-1">
+<div class="topic-heading">
+<span class="circle">1</span>
+<h2 class="text-2xl font-bold">Code, environment, and weights</h2>
+</div>
+<div class="inema-prose">
+<h3>What it is</h3>
+<p data-inema-block="modulo-2-1-t1-what">The clone includes the SDK and the practical app; the weights are downloaded separately from Hugging Face. A virtual environment isolates the Python dependencies from the rest of the machine. The project keeps the upstream history and license, with the identified adaptation in the practical and docs files.</p>
+<h3>Why learn</h3>
+<p data-inema-block="modulo-2-1-t1-why">Cloning the Git repo doesn’t automatically download the checkpoint. The first run can take much longer than inference with the resident model. Separate these two steps when describing the experience to someone else or when measuring latency.</p>
+</div>
+<div class="example">
+<strong>Applied example</strong>
+<p data-inema-block="modulo-2-1-t1-example">git clone https://github.com/inematds/laya.git; then create the environment and install the package from the clone.</p>
+</div>
+<div class="comparison">
+<div class="yes bg-emerald-900/20">
+<h3>✓ Apply with criteria</h3>
+<p>It can download files, build the architecture, and load the weights. The lab’s inference measurement starts after this preparation.</p>
+</div>
+<div class="no bg-red-900/20">
+<h3>✗ Avoid the automatic conclusion</h3>
+<p>Why does the first call take longer?</p>
+<p>Don’t accept an answer just by the field name or by the appearance of precision. Check the definition and the context of this section.</p>
+</div>
+</div>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Clone</strong>
+<p>versioned code</p>
+</div>
+<div>
+<strong>Venv</strong>
+<p>Python isolation</p>
+</div>
+<div>
+<strong>Checkpoint</strong>
+<p>trained weights</p>
+</div>
+<div>
+<strong>Cache</strong>
+<p>downloaded files</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Test your understanding</h3>
+<p>Why does the first call take longer?</p>
+<details>
+<summary>Check the commented answer</summary>
+<p>It can download files, build the architecture, and load the weights. The lab’s inference measurement starts after this preparation.</p>
+</details>
+</div>
+<div class="toolbar">
+<button aria-pressed="false" class="justify-start" data-inema-read-toggle="">Mark as read</button>
+<button aria-pressed="false" class="justify-start" data-inema-doubt-toggle="">I have a question</button>
+</div>
+</section>
+<section class="topic" data-inema-module="2-1" data-inema-topic="modulo-2-1#topico-2" id="topico-2">
+<div class="topic-heading">
+<span class="circle">2</span>
+<h2 class="text-2xl font-bold">Choose CPU or GPU deliberately</h2>
+</div>
+<div class="inema-prose">
+<h3>What it is</h3>
+<p data-inema-block="modulo-2-1-t2-what">By default, the app uses CPU, so you can experiment without a compatible GPU. The --device cuda argument requests NVIDIA acceleration. The SDK can fall back to CPU in some failures; that’s why the result reports the device that was effectively used. Hardware type strongly affects latency.</p>
+<h3>Why learn</h3>
+<p data-inema-block="modulo-2-1-t2-why">Don’t copy the published 33 ms to describe your machine. Record the Python version, PyTorch, transformers, device, number of questions, and input size. With a GPU, driver compatibility, architecture, and the PyTorch package matter as much as the amount of memory.</p>
+</div>
+<div class="example">
+<strong>Applied example</strong>
+<p data-inema-block="modulo-2-1-t2-example">python3 -m practical --device cuda triage --message "I was billed twice."</p>
+</div>
+<ol class="timeline">
+<li>
+<span class="circle">1</span>
+<div>
+<strong>Observe</strong>
+<p>python3 -m practical --device cuda triage --message "I was billed twice."</p>
+</div>
+</li>
+<li>
+<span class="circle">2</span>
+<div>
+<strong>Define</strong>
+<p>The app uses CPU by default, letting you experiment without a compatible GPU.</p>
+</div>
+</li>
+<li>
+<span class="circle">3</span>
+<div>
+<strong>Check</strong>
+<p>No. Check runtime.device in the response and the terminal warnings. The SDK has fallback paths to CPU.</p>
+</div>
+</li>
+</ol>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>CPU</strong>
+<p>general execution</p>
+</div>
+<div>
+<strong>CUDA</strong>
+<p>NVIDIA acceleration</p>
+</div>
+<div>
+<strong>Fallback</strong>
+<p>alternate device</p>
+</div>
+<div>
+<strong>Environment</strong>
+<p>real versions</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Test your understanding</h3>
+<p>Does the cuda argument guarantee that inference happened on the GPU?</p>
+<details>
+<summary>Check the commented answer</summary>
+<p>No. Check runtime.device in the response and the terminal warnings. The SDK has fallback paths to CPU.</p>
+</details>
+</div>
+<div class="toolbar">
+<button aria-pressed="false" class="justify-start" data-inema-read-toggle="">Mark as read</button>
+<button aria-pressed="false" class="justify-start" data-inema-doubt-toggle="">I have a question</button>
+</div>
+</section>
+<section class="topic" data-inema-module="2-1" data-inema-topic="modulo-2-1#topico-3" id="topico-3">
+<div class="topic-heading">
+<span class="circle">3</span>
+<h2 class="text-2xl font-bold">Download only the necessary model</h2>
+</div>
+<div class="inema-prose">
+<h3>What it is</h3>
+<p data-inema-block="modulo-2-1-t3-what">The adaptation preloads only multilingual, using the corresponding subdirectory from the model repository. This covers the lab in Portuguese without keeping three checkpoints in memory. The download command loads the model and confirms the device before opening the interface.</p>
+<h3>Why learn</h3>
+<p data-inema-block="modulo-2-1-t3-why">Preloading all models may be suitable for varied traffic, but it increases resident memory. An app with a known language scope should start with the smallest necessary set. Don’t confuse parameter count with exact memory consumption during execution.</p>
+</div>
+<div class="example">
+<strong>Applied example</strong>
+<p data-inema-block="modulo-2-1-t3-example">python3 -m practical --device cpu download</p>
+</div>
+<aside class="tip bg-primary/10 border-primary/30">
+<h3>Practical tip</h3>
+<p>The files stay in the cache, and download problems show up before service. The process still needs to load the weights in its own memory.</p>
+</aside>
+<div class="codebox">
+<h3>Reference command / schema</h3>
+<pre>
+<code>git clone https://github.com/inematds/laya.git
+cd laya
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -e . -r practical/requirements.txt
+python3 -m practical download
+python3 -m practical triage --message "Quero meu reembolso."</code>
+</pre>
+</div>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Preload</strong>
+<p>preloading</p>
+</div>
+<div>
+<strong>Resident</strong>
+<p>model in memory</p>
+</div>
+<div>
+<strong>Subfolder</strong>
+<p>bundle variant</p>
+</div>
+<div>
+<strong>Memory</strong>
+<p>weights and intermediates</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Test your understanding</h3>
+<p>What do you gain by running download before serve?</p>
+<details>
+<summary>Check the commented answer</summary>
+<p>The files stay in the cache, and download problems show up before service. The process still needs to load the weights in its own memory.</p>
+</details>
+</div>
+<div class="toolbar">
+<button aria-pressed="false" class="justify-start" data-inema-read-toggle="">Mark as read</button>
+<button aria-pressed="false" class="justify-start" data-inema-doubt-toggle="">I have a question</button>
+</div>
+</section>
+<section class="topic" data-inema-module="2-1" data-inema-topic="modulo-2-1#topico-4" id="topico-4">
+<div class="topic-heading">
+<span class="circle">4</span>
+<h2 class="text-2xl font-bold">First triage via the terminal</h2>
+</div>
+<div class="inema-prose">
+<h3>What it is</h3>
+<p data-inema-block="modulo-2-1-t4-what">The triage command accepts a message and an optional subject, runs the four questions, and prints JSON. The result includes answers, routing, usage, runtime, and policy. Read the suggested department first, then the review signals and reasons; finally, check execution details.</p>
+<h3>Why learn</h3>
+<p data-inema-block="modulo-2-1-t4-why">The command should exit with an error when the input is invalid or the model fails. This lets you integrate the tool into scripts without confusing unavailability with a valid recommendation. Preserve the JSON output of a successful test as evidence of installation.</p>
+</div>
+<div class="example">
+<strong>Applied example</strong>
+<p data-inema-block="modulo-2-1-t4-example">python3 -m practical triage --message "I want to hire twenty licenses." --subject "New contract"</p>
+</div>
+<div class="comparison">
+<div class="yes bg-emerald-900/20">
+<h3>✓ Apply with criteria</h3>
+<p>None: the lab doesn’t refund money. automated_action_executed remains false and the operational action is human_review.</p>
+</div>
+<div class="no bg-red-900/20">
+<h3>✗ Avoid the automatic conclusion</h3>
+<p>Which field indicates that money was refunded?</p>
+<p>Don’t accept an answer just by the field name or by the appearance of precision. Check the definition and the context of this section.</p>
+</div>
+</div>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>CLI</strong>
+<p>command interface</p>
+</div>
+<div>
+<strong>Exit code</strong>
+<p>process result</p>
+</div>
+<div>
+<strong>Answers</strong>
+<p>predictions</p>
+</div>
+<div>
+<strong>Policy</strong>
+<p>operational decision</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Test your understanding</h3>
+<p>Which field indicates that money was refunded?</p>
+<details>
+<summary>Check the commented answer</summary>
+<p>None: the lab doesn’t refund money. automated_action_executed remains false and the operational action is human_review.</p>
+</details>
+</div>
+<div class="toolbar">
+<button aria-pressed="false" class="justify-start" data-inema-read-toggle="">Mark as read</button>
+<button aria-pressed="false" class="justify-start" data-inema-doubt-toggle="">I have a question</button>
+</div>
+</section>
+<section class="topic" data-inema-module="2-1" data-inema-topic="modulo-2-1#topico-5" id="topico-5">
+<div class="topic-heading">
+<span class="circle">5</span>
+<h2 class="text-2xl font-bold">Check versions and provenance</h2>
+</div>
+<div class="inema-prose">
+<h3>What it is</h3>
+<p data-inema-block="modulo-2-1-t5-what">The fork starts from the upstream commit recorded in the documentation. The adaptation increments the version from 0.3.4 to 0.4.4 per the project’s convention, while keeping the patch as the minor is increased. Code, environment, and checkpoint are three different identities that must accompany an evaluation.</p>
+<h3>Why learn</h3>
+<p data-inema-block="modulo-2-1-t5-why">If a result changes, compare those identities first. Remote weights can evolve even with the same repository name. For formal experiments, pin a model revision or keep a local snapshot and use --model-path to load it.</p>
+</div>
+<div class="example">
+<strong>Applied example</strong>
+<p data-inema-block="modulo-2-1-t5-example">git rev-parse HEAD identifies code; the cache snapshot identifies the weights; pip freeze records libraries.</p>
+</div>
+<aside class="tip bg-primary/10 border-primary/30">
+<h3>Practical tip</h3>
+<p>No. Also record the weights revision, code version, dependencies, schema, data, and execution conditions.</p>
+</aside>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Review</strong>
+<p>exact commit</p>
+</div>
+<div>
+<strong>Snapshot</strong>
+<p>weights version</p>
+</div>
+<div>
+<strong>Dependency</strong>
+<p>library</p>
+</div>
+<div>
+<strong>Reproduction</strong>
+<p>repeat conditions</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Test your understanding</h3>
+<p>Is it enough to record the laya-multilingual name to reproduce a result?</p>
+<details>
+<summary>Check the commented answer</summary>
+<p>No. Also record the weights revision, code version, dependencies, schema, data, and execution conditions.</p>
+</details>
+</div>
+<div class="toolbar">
+<button aria-pressed="false" class="justify-start" data-inema-read-toggle="">Mark as read</button>
+<button aria-pressed="false" class="justify-start" data-inema-doubt-toggle="">I have a question</button>
+</div>
+</section>
+<section class="topic" data-inema-module="2-1" data-inema-topic="modulo-2-1#topico-6" id="topico-6">
+<div class="topic-heading">
+<span class="circle">6</span>
+<h2 class="text-2xl font-bold">Fix failures without rebuilding everything</h2>
+</div>
+<div class="inema-prose">
+<h3>What it is</h3>
+<p data-inema-block="modulo-2-1-t6-what">Start by identifying the failure layer: import, download, loading, tokenization, or forward pass. USE_TF=0 is an upstream recommendation to avoid TensorFlow probing in problematic environments. A network failure isn’t fixed by changing questions; an input error doesn’t require reinstalling the model.</p>
+<h3>Why learn</h3>
+<p data-inema-block="modulo-2-1-t6-why">The lab exposes failures in the API and doesn’t invent a substitute classification. Keep the technical log in the terminal and an objective message in the interface. After fixing, rerun the smallest test that reaches the affected stage, followed by a real inference.</p>
+</div>
+<div class="example">
+<strong>Applied example</strong>
+<p data-inema-block="modulo-2-1-t6-example">Download failed: test checkpoint access. Text exceeded tokens: reduce the input. Bad result: review the schema and evaluation.</p>
+</div>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Diagnosis</strong>
+<p>find the layer</p>
+</div>
+<div>
+<strong>minimal fix</strong>
+<p>local intervention</p>
+</div>
+<div>
+<strong>Smoke test</strong>
+<p>short run</p>
+</div>
+<div>
+<strong>explicit error</strong>
+<p>recognizable failure</p>
+</div>
+</div>
+<div class="exercise">
+<h3>Test your understanding</h3>
+<p>If the model classifies a text badly, should I reinstall everything?</p>
+<details>
+<summary>Check the commented answer</summary>
+<p>No. First confirm the checkpoint, language, and scheme. Then compare with labeled examples; a reinstallation only makes sense if there’s evidence of a broken environment.</p>
+</details>
+</div>
+<div class="toolbar">
+<button aria-pressed="false" class="justify-start" data-inema-read-toggle="">Mark as read</button>
+<button aria-pressed="false" class="justify-start" data-inema-doubt-toggle="">I have a question</button>
+</div>
+</section>
+<section class="summary">
+<h2>Module summary</h2>
+<ul>
+<li>It can download files, build the architecture, and load the weights. The lab’s inference measurement starts after this preparation.</li>
+<li>The files stay in the cache, and download problems show up before service. The process still needs to load the weights in its own memory.</li>
+<li>No. Also record the weights revision, code version, dependencies, schema, data, and execution conditions.</li>
+</ul>
+<p>Select a snippet from the lesson to highlight or annotate. Questions and notes stay in your journey; export the JSON to back up.</p>
+<div class="toolbar">
+<a class="button" href="index.html">← Learning track map</a>
+<a class="button primary" href="../trilha2/modulo-2-2.html">Next: Router, context, and processing →</a>
+</div>
+</section>
+</main>
+<footer>
+<div class="wrap">Laya &amp; Jev · INEMA · Course v2 · Content revised on 21/09/2026<br/>
+<a href="../../fontes.html">Sources and critical analysis</a> · <a href="https://inematds.github.io/laya/guia/">Project guide</a> · <a href="https://github.com/inematds/laya-curso">Course repository</a> · <a href="https://inema.club">INEMA.CLUB</a>
+</div>
+</footer>
+<dialog aria-labelledby="modal-title" id="module-modal">
+<div class="toolbar">
+<strong id="modal-title">Module reading</strong>
+<button onclick="closeModal()">Close</button>
+</div>
+<iframe id="module-frame" title="Complete module content">
+</iframe>
+</dialog>
+<script src="../../assets/core.js">
+</script>
+<script src="../../assets/learn.js?v=1.1.0">
+</script>
+<script>document.addEventListener('DOMContentLoaded',function(){if(window.INEMA)INEMA.init();});</script>
+<nav aria-label="Course language" data-course-languages=""><a href="../../../curso/trilha2/modulo-2-1.html" hreflang="pt-BR" lang="pt-BR">Português</a><a aria-current="page" href="modulo-2-1.html" hreflang="en" lang="en">English</a><a href="../../../es/curso/trilha2/modulo-2-1.html" hreflang="es" lang="es">Español</a></nav><script data-course-language-hash="">document.querySelectorAll('[data-course-languages] a').forEach(function(a){a.addEventListener('click',function(){a.href=a.getAttribute('href').split('#')[0]+location.hash;});});</script></body>
+</html>

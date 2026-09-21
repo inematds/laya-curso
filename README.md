@@ -25,4 +25,4 @@ python3 scripts/build.py
 python3 scripts/check.py
 ```
 
-Versão: v1.0.0. Imagens fornecidas pelo usuário; não são evidência técnica. O vídeo e materiais integrais de terceiros ficam no acervo local de pesquisa e são referenciados, não republicados integralmente. Não treinamos um modelo nem executamos Jev neste curso. Licença Apache 2.0 para o código; atribuições upstream no projeto prático.
+Versão: v1.1.0. Imagens fornecidas pelo usuário; não são evidência técnica. O vídeo e materiais integrais de terceiros ficam no acervo local de pesquisa e são referenciados, não republicados integralmente. Não treinamos um modelo nem executamos Jev neste curso. Licença Apache 2.0 para o código; atribuições upstream no projeto prático.

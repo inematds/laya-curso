@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+<head>
+<script>(function () {
+  try {
+    var html = document.documentElement;
+    var DEF = { theme: 'inema-dark', font: 'inter', fontScale: 100, lineWidth: 68, leading: 1.7, accent: 'emerald' };
+    function clone(o) { var r = {}; for (var x in o) r[x] = o[x]; return r; }
+    var p = clone(DEF);
+    try {
+      var raw = localStorage.getItem('inema.prefs');
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          for (var k in DEF) if (parsed[k] != null) p[k] = parsed[k];
+        }
+      } else {
+        // fallback ao tema legado do v1
+        var legacy = localStorage.getItem('theme');
+        if (legacy === 'light') p.theme = 'claro';
+        else if (legacy === 'dark') p.theme = 'inema-dark';
+      }
+    } catch (e) { p = clone(DEF); }
+
+    // mapa tema -> (.dark on/off, data-theme, color-scheme)
+    var THEMES = {
+      'inema-dark': { dark: true,  attr: null,        cs: 'dark'  },
+      'claro':      { dark: false, attr: null,        cs: 'light' },
+      'sepia':      { dark: false, attr: 'sepia',     cs: 'light' },
+      'foco':       { dark: null,  attr: 'foco',      cs: null    },  // herda eixo atual
+      'contraste':  { dark: true,  attr: 'contraste', cs: 'dark'  }
+    };
+    var t = THEMES[p.theme] || THEMES['inema-dark'];
+
+    if (t.dark === true) html.classList.add('dark');
+    else if (t.dark === false) html.classList.remove('dark');
+    // 'foco' (null) preserva o que ja houver no atributo class do <html>
+
+    if (t.attr) html.setAttribute('data-theme', t.attr);
+    else html.removeAttribute('data-theme');
+
+    html.style.colorScheme = (t.cs ? t.cs : (html.classList.contains('dark') ? 'dark' : 'light'));
+
+    html.setAttribute('data-font', p.font || 'inter');
+    html.setAttribute('data-accent', p.accent || 'emerald');
+
+    // variaveis de leitura (espelham learn.js / learn.css) ANTES do paint
+    var s = html.style;
+    var scale = (+p.fontScale || 100);
+    s.setProperty('--inema-font-scale', (scale / 100).toString());
+    s.setProperty('font-size', scale + '%');               // :root em %, nunca px
+    s.setProperty('--measure', (+p.lineWidth || 68) + 'ch');
+    s.setProperty('--lh-body', (+p.leading || 1.7).toString());
+    var fam = p.font === 'system'
+      ? 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+      : (p.font === 'leitura'
+        ? '"Atkinson Hyperlegible", "Inter", system-ui, sans-serif'
+        : '"Inter", system-ui, sans-serif');
+    s.setProperty('--font-body', fam);
+
+    var ACC = {
+      emerald: [152, 76, 45], blue: [217, 91, 60], purple: [258, 90, 66],
+      amber: [38, 92, 50], teal: [174, 72, 41], rose: [350, 89, 60]
+    };
+    var a = ACC[p.accent] || ACC.emerald;
+    s.setProperty('--accent-h', a[0] + '');
+    s.setProperty('--accent-s', a[1] + '%');
+    s.setProperty('--accent-l', a[2] + '%');
+    s.setProperty('--accent', 'hsl(' + a[0] + ' ' + a[1] + '% ' + a[2] + '%)');
+  } catch (err) {
+    // qualquer falha => default dark, preserva a marca
+    try { document.documentElement.classList.add('dark'); document.documentElement.style.colorScheme = 'dark'; } catch (e) {}
+  }
+})();
+</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="laya-curso-en" name="inema-course"/>
+<meta content="Practical course on Laya and Jev: structured decisions, local inference, triage in Portuguese, and critical evaluation." name="description"/>
+<title>Practical application | Laya &amp; Jev · INEMA</title>
+<script data-inema-manifest="" type="application/json">{"course": "laya-curso-en", "tracks": [{"n": "1", "title": "Fundamentals", "modules": [{"id": "1-1", "title": "Deciding is not conversing", "topics": 6, "href": "curso/trilha1/modulo-1-1.html"}, {"id": "1-2", "title": "The three primitives", "topics": 6, "href": "curso/trilha1/modulo-1-2.html"}]}, {"n": "2", "title": "Local engine", "modules": [{"id": "2-1", "title": "Installation and first inference", "topics": 6, "href": "curso/trilha2/modulo-2-1.html"}, {"id": "2-2", "title": "Router, context, and processing", "topics": 6, "href": "curso/trilha2/modulo-2-2.html"}]}, {"n": "3", "title": "Practical application", "modules": [{"id": "3-1", "title": "Triage console in Portuguese", "topics": 6, "href": "curso/trilha3/modulo-3-1.html"}, {"id": "3-2", "title": "Integration with agents and processes", "topics": 6, "href": "curso/trilha3/modulo-3-2.html"}]}, {"n": "4", "title": "Quality and evolution", "modules": [{"id": "4-1", "title": "Benchmarks, calibration, and evaluation", "topics": 6, "href": "curso/trilha4/modulo-4-1.html"}, {"id": "4-2", "title": "Specialization and final project", "topics": 6, "href": "curso/trilha4/modulo-4-2.html"}]}]}</script>
+<link href="../../assets/course.css?v=1.1.0" rel="stylesheet"/>
+<link href="../../assets/learn.css" rel="stylesheet"/>
+<style>:root{--track:#a78bfa}</style>
+<link href="https://inematds.github.io/laya-curso/curso/trilha3/index.html" hreflang="pt-BR" rel="alternate"/><link href="https://inematds.github.io/laya-curso/en/curso/trilha3/index.html" hreflang="en" rel="alternate"/><link href="https://inematds.github.io/laya-curso/es/curso/trilha3/index.html" hreflang="es" rel="alternate"/><link href="https://inematds.github.io/laya-curso/curso/trilha3/index.html" hreflang="x-default" rel="alternate"/><link href="https://inematds.github.io/laya-curso/en/curso/trilha3/index.html" rel="canonical"/><style id="course-language-css">[data-course-languages]{position:fixed;bottom:0;left:0;right:0;z-index:60;display:flex;gap:1.25rem;padding:.65rem;justify-content:center;background:#111827;color:#f3f4f6}[data-course-languages] a{color:inherit;font:14px system-ui}[data-course-languages] [aria-current]{font-weight:bold;text-decoration:underline}[data-course-languages] a:focus-visible{outline:2px solid #38bdf8;outline-offset:4px}body{padding-bottom:75px}</style></head>
+<body class="bg-dark-900 text-neutral-100">
+<a class="skip" href="#conteudo">Jump to content</a>
+<nav class="nav bg-dark-900 border-dark-600">
+<div class="nav-inner">
+<a class="brand" href="../../index.html">◈ LAYA</a>
+<a class="text-sky-400" href="https://inema.club" rel="noopener" target="_blank">INEMA.CLUB</a>
+<a href="https://inema.pro" rel="noopener" target="_blank">PRO</a>
+<div class="nav-tracks">
+<a class="track-link" href="../../curso/trilha1/index.html">T1 · Fundamentals</a>
+<a class="track-link" href="../../curso/trilha2/index.html">T2 · Local engine</a>
+<a class="track-link active" href="../../curso/trilha3/index.html">T3 · Practical application</a>
+<a class="track-link" href="../../curso/trilha4/index.html">T4 · Quality and evolution</a>
+</div>
+<button aria-label="Toggle light and dark" id="theme-toggle" onclick="INEMA.setPref('theme',document.documentElement.classList.contains('dark')?'claro':'inema-dark')">☀ / ☾</button>
+</div>
+</nav>
+<main class="wrap" data-inema-track="3" id="conteudo">
+<div class="toolbar">
+<button data-inema-journey-open="">My journey</button>
+<button onclick="INEMA.resume()">Continue where I left off</button>
+<button aria-expanded="false" data-inema-appearance-toggle="#appearance">Appearance and reading</button>
+</div>
+<div data-inema-appearance="" data-open="false" id="appearance">
+<strong>Your reading comfort</strong>
+<div class="toolbar">
+<button data-inema-set-theme="inema-dark">Dark</button>
+<button data-inema-set-theme="claro">Light</button>
+<button data-inema-set-theme="sepia">Sepia</button>
+<button data-inema-set-theme="foco">Focus</button>
+<button data-inema-set-theme="contraste">High contrast</button>
+</div>
+<div class="toolbar">
+<button data-inema-set-fontscale="100">100% font</button>
+<button data-inema-set-fontscale="112">112% font</button>
+<button data-inema-set-fontscale="125">125% font</button>
+<button data-inema-set-leading="1.45">Compact line spacing</button>
+<button data-inema-set-leading="1.7">Comfortable line spacing</button>
+<button data-inema-set-linewidth="60">Short column</button>
+<button data-inema-set-linewidth="75">Wide column</button>
+<button data-inema-set-font="system">System font</button>
+<button data-inema-set-font="leitura">Reading font</button>
+<button data-inema-set-accent="amber">Amber accent</button>
+<button data-inema-set-accent="blue">Blue accent</button>
+</div>
+</div>
+<header class="module-hero">
+<span class="eyebrow">TRACK 3</span>
+<h1>🛠️ Practical application</h1>
+<p class="lead">Turn predictions into a verifiable triage console.</p>
+<div class="stats">
+<span>2 modules</span>
+<span>12 topics</span>
+<span>70–100 min with practice</span>
+<span>12 exercises</span>
+</div>
+</header>
+<div class="diagram">
+<svg aria-label="Understand to Experiment to Verify" class="w-full h-auto" font-family="Inter,system-ui,sans-serif" role="img" viewbox="0 0 760 185">
+<defs>
+<pattern height="20" id="track3-grid" patternunits="userSpaceOnUse" width="20">
+<circle cx="1" cy="1" fill="#64748b" opacity=".25" r="1"></circle>
+</pattern>
+<filter id="track3-glow">
+<fegaussianblur stddeviation="1.8"></fegaussianblur>
+</filter>
+</defs>
+<rect fill="url(#track3-grid)" height="185" width="760"></rect>
+<path d="M240 92h30m220 0h30" stroke="#38bdf8" stroke-width="2"></path>
+<g>
+<rect fill="#111827" height="88" rx="12" stroke="#a78bfa" stroke-width="2" width="220" x="20" y="48"></rect>
+<text fill="#e5e7eb" font-size="18" font-weight="600" text-anchor="middle" x="130" y="98">Understand</text>
+</g>
+<g>
+<rect fill="#111827" height="88" rx="12" stroke="#38bdf8" stroke-width="2" width="220" x="270" y="48"></rect>
+<text fill="#e5e7eb" font-size="18" font-weight="600" text-anchor="middle" x="380" y="98">Try</text>
+</g>
+<g>
+<rect fill="#111827" height="88" rx="12" stroke="#a78bfa" stroke-width="2" width="220" x="520" y="48"></rect>
+<text fill="#e5e7eb" font-size="18" font-weight="600" text-anchor="middle" x="630" y="98">Verify</text>
+</g>
+<text fill="#cbd5e1" font-size="12" text-anchor="middle" x="380" y="166">LAYA / INEMA · conceptual flow</text>
+</svg>
+</div>
+<div aria-label="Progress" class="meter" data-inema-meter="trilha:3">
+<span>Your progress</span> <span data-inema-meter-frac="">
+</span>
+<div class="inema-bar">
+<div class="inema-bar__fill" data-inema-meter-fill="">
+</div>
+</div>
+</div>
+<h2>Track map</h2>
+<div class="cards">
+<a class="card" href="#modulo-3-1">
+<div class="card-top">
+<span>3.1</span>
+<span>35–50 min</span>
+</div>
+<h3>🛠️ Portuguese triage console</h3>
+<p>Use the application and understand its boundaries.</p>
+</a>
+<a class="card" href="#modulo-3-2">
+<div class="card-top">
+<span>3.2</span>
+<span>35–50 min</span>
+</div>
+<h3>🛠️ Integration with agents and processes</h3>
+<p>Connect decisions without confusing prediction with permission.</p>
+</a>
+</div>
+<h2 class="text-2xl font-bold mb-6">Detailed content</h2>
+<section class="module-card bg-dark-800 border-dark-600" id="modulo-3-1">
+<span class="eyebrow">MODULE 3.1</span>
+<h3 class="text-2xl font-bold">Triage console in Portuguese</h3>
+<p>Use the application and understand its boundaries.</p>
+<div class="topic-item">
+<button aria-controls="panel-3-1-1" aria-expanded="true" class="accordion justify-start" onclick="toggleTopic(this)">
+<span class="circle">1</span>Open the local interface</button>
+<div class="topic-explanation" id="panel-3-1-1">
+<h4>What it is</h4>
+<p>The command serve starts a server at 127.0.0.1, port 8765 by default.</p>
+<h4>Why learn</h4>
+<p>The published guide on GitHub Pages is static documentation; the inference interface runs on the machine that executes Python.</p>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Loopback</strong>
+<p>local access</p>
+</div>
+<div>
+<strong>Server</strong>
+<p>Python process</p>
+</div>
+<div>
+<strong>Pages</strong>
+<p>static site</p>
+</div>
+<div>
+<strong>Form</strong>
+<p>controlled input</p>
+</div>
+</div>
+</div>
+</div>
+<div class="topic-item">
+<button aria-controls="panel-3-1-2" aria-expanded="true" class="accordion justify-start" onclick="toggleTopic(this)">
+<span class="circle">2</span>Read the result as a recommendation</button>
+<div class="topic-explanation" id="panel-3-1-2">
+<h4>What it is</h4>
+<p>The screen shows department, SDK confidence, urgency, cancellation threat, and a refund request.</p>
+<h4>Why learn</h4>
+<p>Start from the original text, check the suggested department, and look for contradictory signals.</p>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Contextual reading</strong>
+<p>full meaning</p>
+</div>
+<div>
+<strong>Signal</strong>
+<p>bounded prediction</p>
+</div>
+<div>
+<strong>Distribution</strong>
+<p>alternatives</p>
+</div>
+<div>
+<strong>Recommendation</strong>
+<p>reviewable decision</p>
+</div>
+</div>
+</div>
+</div>
+<div class="topic-item">
+<button aria-controls="panel-3-1-3" aria-expanded="true" class="accordion justify-start" onclick="toggleTopic(this)">
+<span class="circle">3</span>The policy stays out of the model</button>
+<div class="topic-explanation" id="panel-3-1-3">
+<h4>What it is</h4>
+<p>review_policy takes validated responses and builds the routing.</p>
+<h4>Why learn</h4>
+<p>Separating policy and inference lets you modify operating rules without rewriting the encoder.</p>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Policy</strong>
+<p>operational rule</p>
+</div>
+<div>
+<strong>Authorization</strong>
+<p>external permission</p>
+</div>
+<div>
+<strong>learned signal</strong>
+<p>is not permission</p>
+</div>
+<div>
+<strong>Review</strong>
+<p>human responsibility</p>
+</div>
+</div>
+</div>
+</div>
+<div class="topic-item">
+<button aria-controls="panel-3-1-4" aria-expanded="true" class="accordion justify-start" onclick="toggleTopic(this)">
+<span class="circle">4</span>Use an API with a small contract</button>
+<div class="topic-explanation" id="panel-3-1-4">
+<h4>What it is</h4>
+<p>POST /api/triage receives only message and subject.</p>
+<h4>Why learn</h4>
+<p>A consumer must check the HTTP status before using answers.</p>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>HTTP 200</strong>
+<p>result</p>
+</div>
+<div>
+<strong>HTTP 422</strong>
+<p>invalid input</p>
+</div>
+<div>
+<strong>HTTP 503</strong>
+<p>unavailability</p>
+</div>
+<div>
+<strong>Health</strong>
+<p>service state</p>
+</div>
+</div>
+</div>
+</div>
+<div class="topic-item">
+<button aria-controls="panel-3-1-5" aria-expanded="true" class="accordion justify-start" onclick="toggleTopic(this)">
+<span class="circle">5</span>Data and export</button>
+<div class="topic-explanation" id="panel-3-1-5">
+<h4>What it is</h4>
+<p>The application does not automatically save the text of tickets.</p>
+<h4>Why learn</h4>
+<p>Running locally prevents sending the ticket to an external inference API, but the weights must be obtained from the Hub initially.</p>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Minimization</strong>
+<p>only what’s necessary</p>
+</div>
+<div>
+<strong>Export</strong>
+<p>user choice</p>
+</div>
+<div>
+<strong>Weights cache</strong>
+<p>initial download</p>
+</div>
+<div>
+<strong>Retention</strong>
+<p>retention time</p>
+</div>
+</div>
+</div>
+</div>
+<div class="topic-item">
+<button aria-controls="panel-3-1-6" aria-expanded="true" class="accordion justify-start" onclick="toggleTopic(this)">
+<span class="circle">6</span>End-to-end lab</button>
+<div class="topic-explanation" id="panel-3-1-6">
+<h4>What it is</h4>
+<p>Run the server, load an example, analyze, inspect the JSON, and download the result.</p>
+<h4>Why learn</h4>
+<p>This test reveals real behavior without requiring a large benchmark.</p>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Minimum batch</strong>
+<p>controlled change</p>
+</div>
+<div>
+<strong>Negation</strong>
+<p>semantic change</p>
+</div>
+<div>
+<strong>Record</strong>
+<p>preserved evidence</p>
+</div>
+<div>
+<strong>Version</strong>
+<p>distinct experiment</p>
+</div>
+</div>
+</div>
+</div>
+<div class="toolbar justify-start">
+<button onclick="openModal('modulo-3-1.html')">View in modal</button>
+<a class="button primary" href="modulo-3-1.html">View Full →</a>
+</div>
+</section>
+<section class="module-card bg-dark-800 border-dark-600" id="modulo-3-2">
+<span class="eyebrow">MODULE 3.2</span>
+<h3 class="text-2xl font-bold">Integration with agents and processes</h3>
+<p>Connect decisions without confusing prediction with permission.</p>
+<div class="topic-item">
+<button aria-controls="panel-3-2-1" aria-expanded="true" class="accordion justify-start" onclick="toggleTopic(this)">
+<span class="circle">1</span>The event happens before the AI</button>
+<div class="topic-explanation" id="panel-3-2-1">
+<h4>What it is</h4>
+<p>An integration starts with the event: ticket received, document imported, or an agent run completed.</p>
+<h4>Why learn</h4>
+<p>Don’t send the entire history for convenience.</p>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Event</strong>
+<p>occurrence</p>
+</div>
+<div>
+<strong>Normalization</strong>
+<p>common format</p>
+</div>
+<div>
+<strong>Identifier</strong>
+<p>link</p>
+</div>
+<div>
+<strong>Deduplication</strong>
+<p>avoids repetition</p>
+</div>
+</div>
+</div>
+</div>
+<div class="topic-item">
+<button aria-controls="panel-3-2-2" aria-expanded="true" class="accordion justify-start" onclick="toggleTopic(this)">
+<span class="circle">2</span>Routing of agents and models are different decisions</button>
+<div class="topic-explanation" id="panel-3-2-2">
+<h4>What it is</h4>
+<p>The SDK Router chooses a Laya checkpoint.</p>
+<h4>Why learn</h4>
+<p>Use clear names in contracts: checkpoint, executor, and destination should not mean the same thing.</p>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Checkpoint</strong>
+<p>Laya model</p>
+</div>
+<div>
+<strong>Executor</strong>
+<p>tool or agent</p>
+</div>
+<div>
+<strong>Destination</strong>
+<p>operational queue</p>
+</div>
+<div>
+<strong>Budget</strong>
+<p>spending cap</p>
+</div>
+</div>
+</div>
+</div>
+<div class="topic-item">
+<button aria-controls="panel-3-2-3" aria-expanded="true" class="accordion justify-start" onclick="toggleTopic(this)">
+<span class="circle">3</span>Autonomy levels as a proposed policy</button>
+<div class="topic-explanation" id="panel-3-2-3">
+<h4>What it is</h4>
+<p>N0 through N4, present in the provided material, are an organizational proposal to level up autonomy.</p>
+<h4>Why learn</h4>
+<p>The model may provide signals used in the autonomy assessment; the final attribution must come from verifiable rules.</p>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Autonomy</strong>
+<p>allowed scope</p>
+</div>
+<div>
+<strong>Level</strong>
+<p>local convention</p>
+</div>
+<div>
+<strong>Promotion</strong>
+<p>permission change</p>
+</div>
+<div>
+<strong>Context</strong>
+<p>impact of the action</p>
+</div>
+</div>
+</div>
+</div>
+<div class="topic-item">
+<button aria-controls="panel-3-2-4" aria-expanded="true" class="accordion justify-start" onclick="toggleTopic(this)">
+<span class="circle">4</span>Guardrails as a complementary signal</button>
+<div class="topic-explanation" id="panel-3-2-4">
+<h4>What it is</h4>
+<p>The guardrails and moderation presets ask questions about attacks or problematic content.</p>
+<h4>Why learn</h4>
+<p>Separate command data and keep tool permissions out of the classified text.</p>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Untrusted data</strong>
+<p>external input</p>
+</div>
+<div>
+<strong>Guardrail</strong>
+<p>additional signal</p>
+</div>
+<div>
+<strong>False negative</strong>
+<p>not signaled risk</p>
+</div>
+<div>
+<strong>Permission</strong>
+<p>independent control</p>
+</div>
+</div>
+</div>
+</div>
+<div class="topic-item">
+<button aria-controls="panel-3-2-5" aria-expanded="true" class="accordion justify-start" onclick="toggleTopic(this)">
+<span class="circle">5</span>LOOP-R as an integration hypothesis</button>
+<div class="topic-explanation" id="panel-3-2-5">
+<h4>What it is</h4>
+<p>The material proposes using fast decisions in cycles of running, observing, evaluating, and correcting.</p>
+<h4>Why learn</h4>
+<p>Do not reuse the support/agent outcome as if it were a code evaluation or an incident.</p>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Note</strong>
+<p>actual result</p>
+</div>
+<div>
+<strong>Evaluation</strong>
+<p>criterion</p>
+</div>
+<div>
+<strong>Rollback</strong>
+<p>controlled return</p>
+</div>
+<div>
+<strong>Domain</strong>
+<p>specific distribution</p>
+</div>
+</div>
+</div>
+</div>
+<div class="topic-item">
+<button aria-controls="panel-3-2-6" aria-expanded="true" class="accordion justify-start" onclick="toggleTopic(this)">
+<span class="circle">6</span>Draw an auditable integration</button>
+<div class="topic-explanation" id="panel-3-2-6">
+<h4>What it is</h4>
+<p>Outline the path between event, validation, inference, policy, human queue, and eventual executor.</p>
+<h4>Why learn</h4>
+<p>The integration should remain understandable when the model is unavailable.</p>
+<h3>Key concepts</h3>
+<div class="concepts">
+<div>
+<strong>Audit</strong>
+<p>traceability</p>
+</div>
+<div>
+<strong>Fallback</strong>
+<p>alternative path</p>
+</div>
+<div>
+<strong>Queue</strong>
+<p>pending work</p>
+</div>
+<div>
+<strong>explicit failure</strong>
+<p>is not a prediction</p>
+</div>
+</div>
+</div>
+</div>
+<div class="toolbar justify-start">
+<button onclick="openModal('modulo-3-2.html')">View in modal</button>
+<a class="button primary" href="modulo-3-2.html">View Full →</a>
+</div>
+</section>
+</main>
+<footer>
+<div class="wrap">Laya &amp; Jev · INEMA · Course v2 · Content revised on 21/09/2026<br/>
+<a href="../../fontes.html">Sources and critical analysis</a> · <a href="https://inematds.github.io/laya/guia/">Project guide</a> · <a href="https://github.com/inematds/laya-curso">Course repository</a> · <a href="https://inema.club">INEMA.CLUB</a>
+</div>
+</footer>
+<dialog aria-labelledby="modal-title" id="module-modal">
+<div class="toolbar">
+<strong id="modal-title">Module reading</strong>
+<button onclick="closeModal()">Close</button>
+</div>
+<iframe id="module-frame" title="Complete module content">
+</iframe>
+</dialog>
+<script src="../../assets/core.js">
+</script>
+<script src="../../assets/learn.js?v=1.1.0">
+</script>
+<script>document.addEventListener('DOMContentLoaded',function(){if(window.INEMA)INEMA.init();});</script>
+<nav aria-label="Course language" data-course-languages=""><a href="../../../curso/trilha3/index.html" hreflang="pt-BR" lang="pt-BR">Português</a><a aria-current="page" href="index.html" hreflang="en" lang="en">English</a><a href="../../../es/curso/trilha3/index.html" hreflang="es" lang="es">Español</a></nav><script data-course-language-hash="">document.querySelectorAll('[data-course-languages] a').forEach(function(a){a.addEventListener('click',function(){a.href=a.getAttribute('href').split('#')[0]+location.hash;});});</script></body>
+</html>

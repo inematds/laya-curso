@@ -1,0 +1,12 @@
+{
+  "88827b0ba6bfac2b31c822e4": "Move from a design on paper to real inference in Portuguese.",
+  "4f2ff8246c964cb4212285a7": "Turn predictions into a verifiable triage console.",
+  "61c6891f283b9305189a6210": "Triage console in Portuguese",
+  "873104597a86b39256423faa": "This course project is a triage console in Portuguese.",
+  "187b5ca20c1f6f837117ec19": "This course project is a triage console in Portuguese. It takes a message and a subject, returns four signals, and recommends human review. This scope is small enough to investigate errors and close to a real routine. It does not involve payment credentials, email sending, or autonomous execution.",
+  "dbeaba31de2ce0fb78932b29": "The adaptation preloads only multilingual, using the corresponding subdirectory from the model repository.",
+  "a38ab3e2977d56bf1f015c2e": "The adaptation preloads only multilingual, using the corresponding subdirectory from the model repository. This covers the lab in Portuguese without keeping three checkpoints in memory. The download command loads the model and confirms the device before opening the interface.",
+  "0e2762d83ee2c110c6e8ef21": "⟪P0⟫← Learning track map⟪P1⟫\n⟪P2⟫Next: Portuguese triage console →⟪P3⟫",
+  "bf32d251406e05c7f95e9393": "🛠️ Portuguese triage console",
+  "9e56c9597d1e87f29aa6bbca": "4 tracks, 8 modules, 48 topics with exercises and explained answers. Foundations, installation, Router and tokens, triage in Portuguese, integration with agents, evaluation, and specialization. Sources and caveats in ⟪P0⟫."
+}

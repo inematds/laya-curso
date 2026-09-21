@@ -20,13 +20,15 @@ class Page(HTMLParser):
  def handle_endtag(self,tag):
   if tag=='script':self.reading=False
 pages={p:Page(p.read_text()) for p in ROOT.rglob('*.html') if 'assets' not in p.parts}
-errors=[];expected=None;total=0
+errors=[];expected={};totals={}
 for path,page in pages.items():
+ locale=path.relative_to(ROOT).parts[0] if path.relative_to(ROOT).parts[0] in ('en','es') else 'pt'
+ totals.setdefault(locale,0)
  if len(page.ids)!=len(set(page.ids)):errors.append(f'duplicate ids: {path}')
  try:
   manifest=json.loads(page.manifest)
-  if expected is None:expected=manifest
-  assert manifest==expected
+  expected.setdefault(locale,manifest)
+  assert manifest==expected[locale]
  except Exception:errors.append(f'invalid manifest: {path}')
  for link in page.links:
   u=urlsplit(link)
@@ -38,11 +40,11 @@ for path,page in pages.items():
  if path.name.startswith('modulo-'):
   assert len(page.topics)==6 and page.svgs>=1,path
   assert len(path.read_text().splitlines())>=500,path
-  total+=len(page.topics)
- for track in expected['tracks']:
+  totals[locale]+=len(page.topics)
+ for track in expected[locale]['tracks']:
   for mod in track['modules']:
-   target=ROOT/mod['href']
+   target=ROOT/('' if locale=='pt' else locale)/mod['href']
    assert len(pages[target].topics)==mod['topics']
-assert total==48,total
+assert all(total==48 for total in totals.values()),totals
 assert not errors,'\n'.join(errors)
-print(f'OK: {len(pages)} páginas, 8 módulos, {total} tópicos, links/âncoras/manifestos válidos.')
+print(f'OK: {len(pages)} páginas, 8 módulos, {totals} tópicos por idioma, links/âncoras/manifestos válidos.')

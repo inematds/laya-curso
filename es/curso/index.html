@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es">
+<head>
+<script>(function () {
+  try {
+    var html = document.documentElement;
+    var DEF = { theme: 'inema-dark', font: 'inter', fontScale: 100, lineWidth: 68, leading: 1.7, accent: 'emerald' };
+    function clone(o) { var r = {}; for (var x in o) r[x] = o[x]; return r; }
+    var p = clone(DEF);
+    try {
+      var raw = localStorage.getItem('inema.prefs');
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          for (var k in DEF) if (parsed[k] != null) p[k] = parsed[k];
+        }
+      } else {
+        // fallback ao tema legado do v1
+        var legacy = localStorage.getItem('theme');
+        if (legacy === 'light') p.theme = 'claro';
+        else if (legacy === 'dark') p.theme = 'inema-dark';
+      }
+    } catch (e) { p = clone(DEF); }
+
+    // mapa tema -> (.dark on/off, data-theme, color-scheme)
+    var THEMES = {
+      'inema-dark': { dark: true,  attr: null,        cs: 'dark'  },
+      'claro':      { dark: false, attr: null,        cs: 'light' },
+      'sepia':      { dark: false, attr: 'sepia',     cs: 'light' },
+      'foco':       { dark: null,  attr: 'foco',      cs: null    },  // herda eixo atual
+      'contraste':  { dark: true,  attr: 'contraste', cs: 'dark'  }
+    };
+    var t = THEMES[p.theme] || THEMES['inema-dark'];
+
+    if (t.dark === true) html.classList.add('dark');
+    else if (t.dark === false) html.classList.remove('dark');
+    // 'foco' (null) preserva o que ja houver no atributo class do <html>
+
+    if (t.attr) html.setAttribute('data-theme', t.attr);
+    else html.removeAttribute('data-theme');
+
+    html.style.colorScheme = (t.cs ? t.cs : (html.classList.contains('dark') ? 'dark' : 'light'));
+
+    html.setAttribute('data-font', p.font || 'inter');
+    html.setAttribute('data-accent', p.accent || 'emerald');
+
+    // variaveis de leitura (espelham learn.js / learn.css) ANTES do paint
+    var s = html.style;
+    var scale = (+p.fontScale || 100);
+    s.setProperty('--inema-font-scale', (scale / 100).toString());
+    s.setProperty('font-size', scale + '%');               // :root em %, nunca px
+    s.setProperty('--measure', (+p.lineWidth || 68) + 'ch');
+    s.setProperty('--lh-body', (+p.leading || 1.7).toString());
+    var fam = p.font === 'system'
+      ? 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif'
+      : (p.font === 'leitura'
+        ? '"Atkinson Hyperlegible", "Inter", system-ui, sans-serif'
+        : '"Inter", system-ui, sans-serif');
+    s.setProperty('--font-body', fam);
+
+    var ACC = {
+      emerald: [152, 76, 45], blue: [217, 91, 60], purple: [258, 90, 66],
+      amber: [38, 92, 50], teal: [174, 72, 41], rose: [350, 89, 60]
+    };
+    var a = ACC[p.accent] || ACC.emerald;
+    s.setProperty('--accent-h', a[0] + '');
+    s.setProperty('--accent-s', a[1] + '%');
+    s.setProperty('--accent-l', a[2] + '%');
+    s.setProperty('--accent', 'hsl(' + a[0] + ' ' + a[1] + '% ' + a[2] + '%)');
+  } catch (err) {
+    // qualquer falha => default dark, preserva a marca
+    try { document.documentElement.classList.add('dark'); document.documentElement.style.colorScheme = 'dark'; } catch (e) {}
+  }
+})();
+</script>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="laya-curso-es" name="inema-course"/>
+<meta content="Curso práctico de Laya y Jev: decisiones estructuradas, inferencia local, triaje en portugués y evaluación crítica." name="description"/>
+<title>Todas las rutas | Laya &amp; Jev · INEMA</title>
+<script data-inema-manifest="" type="application/json">{"course": "laya-curso-es", "tracks": [{"n": "1", "title": "Fundamentos", "modules": [{"id": "1-1", "title": "Decidir no es conversar", "topics": 6, "href": "curso/trilha1/modulo-1-1.html"}, {"id": "1-2", "title": "Las tres primitivas", "topics": 6, "href": "curso/trilha1/modulo-1-2.html"}]}, {"n": "2", "title": "Motor local", "modules": [{"id": "2-1", "title": "Instalación e primera inferencia", "topics": 6, "href": "curso/trilha2/modulo-2-1.html"}, {"id": "2-2", "title": "Router, contexto y procesamiento", "topics": 6, "href": "curso/trilha2/modulo-2-2.html"}]}, {"n": "3", "title": "Aplicación práctica", "modules": [{"id": "3-1", "title": "Mesa de triaje en portugués", "topics": 6, "href": "curso/trilha3/modulo-3-1.html"}, {"id": "3-2", "title": "Integración con agentes y procesos", "topics": 6, "href": "curso/trilha3/modulo-3-2.html"}]}, {"n": "4", "title": "Calidad y evolución", "modules": [{"id": "4-1", "title": "Benchmarks, calibración y evaluación", "topics": 6, "href": "curso/trilha4/modulo-4-1.html"}, {"id": "4-2", "title": "Especialización y proyecto final", "topics": 6, "href": "curso/trilha4/modulo-4-2.html"}]}]}</script>
+<link href="../assets/course.css?v=1.1.0" rel="stylesheet"/>
+<link href="../assets/learn.css" rel="stylesheet"/>
+<style>:root{--track:#34d399}</style>
+<link href="https://inematds.github.io/laya-curso/curso/index.html" hreflang="pt-BR" rel="alternate"/><link href="https://inematds.github.io/laya-curso/en/curso/index.html" hreflang="en" rel="alternate"/><link href="https://inematds.github.io/laya-curso/es/curso/index.html" hreflang="es" rel="alternate"/><link href="https://inematds.github.io/laya-curso/curso/index.html" hreflang="x-default" rel="alternate"/><link href="https://inematds.github.io/laya-curso/es/curso/index.html" rel="canonical"/><style id="course-language-css">[data-course-languages]{position:fixed;bottom:0;left:0;right:0;z-index:60;display:flex;gap:1.25rem;padding:.65rem;justify-content:center;background:#111827;color:#f3f4f6}[data-course-languages] a{color:inherit;font:14px system-ui}[data-course-languages] [aria-current]{font-weight:bold;text-decoration:underline}[data-course-languages] a:focus-visible{outline:2px solid #38bdf8;outline-offset:4px}body{padding-bottom:75px}</style></head>
+<body class="bg-dark-900 text-neutral-100">
+<a class="skip" href="#conteudo">Saltar al contenido</a>
+<nav class="nav bg-dark-900 border-dark-600">
+<div class="nav-inner">
+<a class="brand" href="../index.html">◈ LAYA</a>
+<a class="text-sky-400" href="https://inema.club" rel="noopener" target="_blank">INEMA.CLUB</a>
+<a href="https://inema.pro" rel="noopener" target="_blank">PRO</a>
+<div class="nav-tracks">
+<a class="track-link" href="../curso/trilha1/index.html">T1 · Fundamentos</a>
+<a class="track-link" href="../curso/trilha2/index.html">T2 · Motor local</a>
+<a class="track-link" href="../curso/trilha3/index.html">T3 · Aplicación práctica</a>
+<a class="track-link" href="../curso/trilha4/index.html">T4 · Calidad y evolución</a>
+</div>
+<button aria-label="Alternar claro y oscuro" id="theme-toggle" onclick="INEMA.setPref('theme',document.documentElement.classList.contains('dark')?'claro':'inema-dark')">☀ / ☾</button>
+</div>
+</nav>
+<main class="wrap" data-inema-track="" id="conteudo">
+<div class="toolbar">
+<button data-inema-journey-open="">Mi recorrido</button>
+<button onclick="INEMA.resume()">Continuar desde donde lo dejé</button>
+<button aria-expanded="false" data-inema-appearance-toggle="#appearance">Apariencia y lectura</button>
+</div>
+<div data-inema-appearance="" data-open="false" id="appearance">
+<strong>Tu comodidad de lectura</strong>
+<div class="toolbar">
+<button data-inema-set-theme="inema-dark">Oscuro</button>
+<button data-inema-set-theme="claro">Claro</button>
+<button data-inema-set-theme="sepia">Sepia</button>
+<button data-inema-set-theme="foco">Foco</button>
+<button data-inema-set-theme="contraste">Alto contraste</button>
+</div>
+<div class="toolbar">
+<button data-inema-set-fontscale="100">Fuente 100%</button>
+<button data-inema-set-fontscale="112">Fuente 112%</button>
+<button data-inema-set-fontscale="125">Fuente 125%</button>
+<button data-inema-set-leading="1.45">Interlineado compacto</button>
+<button data-inema-set-leading="1.7">Interlineado cómodo</button>
+<button data-inema-set-linewidth="60">Columna corta</button>
+<button data-inema-set-linewidth="75">Columna ancha</button>
+<button data-inema-set-font="system">Fuente del sistema</button>
+<button data-inema-set-font="leitura">Fuente de lectura</button>
+<button data-inema-set-accent="amber">Acento ámbar</button>
+<button data-inema-set-accent="blue">Acento azul</button>
+</div>
+</div>
+<h1>Tu recorrido de aprendizaje</h1>
+<div class="cards">
+<a class="card track-card" href="trilha1/index.html" style="--track:#34d399">
+<span class="eyebrow">RUTA 01 · 2 MÓDULOS</span>
+<h2>🧭 Fundamentos</h2>
+<p>Entiende qué resuelve una decisión antes de instalar cualquier modelo.</p>
+<span>Explorar la ruta →</span>
+</a>
+<a class="card track-card" href="trilha2/index.html" style="--track:#60a5fa">
+<span class="eyebrow">RUTA 02 · 2 MÓDULOS</span>
+<h2>⚙️ Motor local</h2>
+<p>Sal del esquema en papel para una inferencia real en portugués.</p>
+<span>Explorar la ruta →</span>
+</a>
+<a class="card track-card" href="trilha3/index.html" style="--track:#a78bfa">
+<span class="eyebrow">RUTA 03 · 2 MÓDULOS</span>
+<h2>🛠️ Aplicación práctica</h2>
+<p>Convierte predicciones en una mesa de triaje verificable.</p>
+<span>Explorar la ruta →</span>
+</a>
+<a class="card track-card" href="trilha4/index.html" style="--track:#fbbf24">
+<span class="eyebrow">RUTA 04 · 2 MÓDULOS</span>
+<h2>📊 Calidad y evolución</h2>
+<p>Mide errores, calibra expectativas y planea la especialización.</p>
+<span>Explorar la ruta →</span>
+</a>
+</div>
+</main>
+<footer>
+<div class="wrap">Laya &amp; Jev · INEMA · Curso v2 · Contenido revisado el 21/09/2026<br/>
+<a href="../fontes.html">Fuentes y análisis crítico</a> · <a href="https://inematds.github.io/laya/guia/">Guía del proyecto</a> · <a href="https://github.com/inematds/laya-curso">Repositorio del curso</a> · <a href="https://inema.club">INEMA.CLUB</a>
+</div>
+</footer>
+<dialog aria-labelledby="modal-title" id="module-modal">
+<div class="toolbar">
+<strong id="modal-title">Lectura del módulo</strong>
+<button onclick="closeModal()">Cerrar</button>
+</div>
+<iframe id="module-frame" title="Contenido completo del módulo">
+</iframe>
+</dialog>
+<script src="../assets/core.js">
+</script>
+<script src="../assets/learn.js?v=1.1.0">
+</script>
+<script>document.addEventListener('DOMContentLoaded',function(){if(window.INEMA)INEMA.init();});</script>
+<nav aria-label="Idioma del curso" data-course-languages=""><a href="../../curso/index.html" hreflang="pt-BR" lang="pt-BR">Português</a><a href="../../en/curso/index.html" hreflang="en" lang="en">English</a><a aria-current="page" href="index.html" hreflang="es" lang="es">Español</a></nav><script data-course-language-hash="">document.querySelectorAll('[data-course-languages] a').forEach(function(a){a.addEventListener('click',function(){a.href=a.getAttribute('href').split('#')[0]+location.hash;});});</script></body>
+</html>

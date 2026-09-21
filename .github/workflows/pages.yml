@@ -22,7 +22,7 @@ jobs:
         run: |
           mkdir -p _site
           cp index.html fontes.html _site/
-          cp -r curso assets _site/
+          cp -r curso assets en es _site/
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
